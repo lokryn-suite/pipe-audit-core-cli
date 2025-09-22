@@ -1,0 +1,14 @@
+[[contracts]]
+column = "user_id"
+rule = "unique"
+
+[[contracts]]
+column = "age"
+rule = "range"
+min = 0
+max = 120
+
+[[contracts]]
+column = "email"
+rule = "pattern"
+pattern = "^[^@]+@[^@]+$"
