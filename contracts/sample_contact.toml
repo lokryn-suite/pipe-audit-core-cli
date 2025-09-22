@@ -1,14 +1,96 @@
-[[contracts]]
-column = "user_id"
-rule = "unique"
+# contracts/sample_contracts.toml
 
-[[contracts]]
-column = "age"
-rule = "range"
-min = 0
-max = 120
+# Example: enforce uniqueness + not null on Region_ID
+[[columns]]
+name = "Region_ID"
+contracts = [
+  { rule = "not_null" },
+  { rule = "unique" }
+]
 
-[[contracts]]
-column = "email"
-rule = "pattern"
-pattern = "^[^@]+@[^@]+$"
+# Example: ensure Ancient_Name is not empty
+[[columns]]
+name = "Ancient_Name"
+contracts = [
+  { rule = "not_null" }
+]
+
+# Example: Current_Faction must be present
+[[columns]]
+name = "Current_Faction"
+contracts = [
+  { rule = "not_null" }
+]
+
+# Example: Era_Tag should match a pattern (e.g. uppercase letters)
+[[columns]]
+name = "Era_Tag"
+contracts = [
+  { rule = "pattern", pattern = "^[A-Z_]+$" }
+]
+
+# Example: Full_Name must not be null
+[[columns]]
+name = "Full_Name"
+contracts = [
+  { rule = "not_null" }
+]
+
+# Example: Colloquial_Name optional, but if present must be <= 50 chars
+[[columns]]
+name = "Colloquial_Name"
+contracts = [
+  { rule = "max_length", value = 50 }
+]
+
+# Example: Founding_Era should be within a numeric range
+[[columns]]
+name = "Founding_Era"
+contracts = [
+  { rule = "range", min = 0, max = 3000 }
+]
+
+# Example: Density_Tier should be categorical
+[[columns]]
+name = "Density_Tier"
+contracts = [
+  { rule = "in_set", values = ["low", "medium", "high"] }
+]
+
+# Example: Capital must not be null
+[[columns]]
+name = "Capital"
+contracts = [
+  { rule = "not_null" }
+]
+
+# Example: Primary_Industry must be present
+[[columns]]
+name = "Primary_Industry"
+contracts = [
+  { rule = "not_null" }
+]
+
+# Example: Founding_Story is free text, no contract yet
+[[columns]]
+name = "Founding_Story"
+contracts = []
+
+# Example: Vote_History_Last3 should be categorical
+[[columns]]
+name = "Vote_History_Last3"
+contracts = [
+  { rule = "in_set", values = ["yes", "no", "abstain"] }
+]
+
+# Example: Key_Pressure_Points optional
+[[columns]]
+name = "Key_Pressure_Points"
+contracts = []
+
+# Example: Unbound_Presence must be boolean
+[[columns]]
+name = "Unbound_Presence"
+contracts = [
+  { rule = "boolean" }
+]
