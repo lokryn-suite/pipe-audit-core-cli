@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.48", features = ["derive"] }
 duckdb = "1.4.0"
+glob = "0.3.3"
 polars = { version = "0.51.0", features = ["csv", "parquet"] }
 polars-io = "0.51.0"
 postgres = "0.19.10"

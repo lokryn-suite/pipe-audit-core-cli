@@ -5,7 +5,9 @@
 name = "Region_ID"
 contracts = [
   { rule = "not_null" },
-  { rule = "unique" }
+  { rule = "unique" },
+  { rule = "range", min = 1, max = 9999 },
+  { rule = "outlier_sigma", sigma = 2.5}
 ]
 
 # Example: ensure Ancient_Name is not empty
@@ -19,14 +21,15 @@ contracts = [
 [[columns]]
 name = "Current_Faction"
 contracts = [
-  { rule = "not_null" }
+  { rule = "not_null" },
+  { rule = "in_set", values = ["Empyrean Synod", "Praxis Directorate", "Vesperian Concord", "Factionless"] }
 ]
 
 # Example: Era_Tag should match a pattern (e.g. uppercase letters)
 [[columns]]
 name = "Era_Tag"
 contracts = [
-  { rule = "pattern", pattern = "^[A-Z_]+$" }
+  { rule = "pattern", pattern = "^[A-Z][a-z]+$" }
 ]
 
 # Example: Full_Name must not be null
@@ -43,18 +46,17 @@ contracts = [
   { rule = "max_length", value = 50 }
 ]
 
-# Example: Founding_Era should be within a numeric range
 [[columns]]
 name = "Founding_Era"
 contracts = [
-  { rule = "range", min = 0, max = 3000 }
+  { rule = "in_set", values = ["Pre-Accord", "Accord-Era", "Post-War"] }
 ]
 
 # Example: Density_Tier should be categorical
 [[columns]]
 name = "Density_Tier"
 contracts = [
-  { rule = "in_set", values = ["low", "medium", "high"] }
+  { rule = "in_set", values = ["Settled", "Dense", "Sparse", "Wastes"] }
 ]
 
 # Example: Capital must not be null
@@ -80,7 +82,7 @@ contracts = []
 [[columns]]
 name = "Vote_History_Last3"
 contracts = [
-  { rule = "in_set", values = ["yes", "no", "abstain"] }
+  { rule = "not_null" }
 ]
 
 # Example: Key_Pressure_Points optional
@@ -88,9 +90,8 @@ contracts = [
 name = "Key_Pressure_Points"
 contracts = []
 
-# Example: Unbound_Presence must be boolean
 [[columns]]
 name = "Unbound_Presence"
 contracts = [
-  { rule = "boolean" }
+  { rule = "in_set", values = ["Latent", "Active", "Sympathetic", "Tolerated", "Passive", "Dominant", "Folk Hero", "Whisper Network", "None"] }
 ]

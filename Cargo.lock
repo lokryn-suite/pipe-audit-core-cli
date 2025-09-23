@@ -924,6 +924,7 @@ dependencies = [
  "clap",
  "clippy",
  "duckdb",
+ "glob",
  "polars",
  "polars-io",
  "postgres",
