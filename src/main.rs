@@ -1,12 +1,8 @@
-mod cli;
-mod commands;
-mod contracts;
-mod logging;
-mod runner;
-mod validators;
 
 use clap::Parser;
-use cli::{Cli, Commands};
+use data_quality::cli::{Cli, Commands};
+use data_quality::logging;
+use data_quality::commands;
 
 fn main() {
     logging::init_logging();

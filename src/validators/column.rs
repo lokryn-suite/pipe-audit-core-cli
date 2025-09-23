@@ -3,7 +3,7 @@ use regex::Regex;
 use std::collections::HashSet;
 
 use crate::contracts::ContractType;
-use super::logging::log_validation_event;
+use crate::logging::log_validation_event;
 
 pub fn apply_column_contract(
     df: &DataFrame,
@@ -17,10 +17,23 @@ pub fn apply_column_contract(
             let series = df.column(column)?;
             let null_count = series.null_count();
             if null_count > 0 {
-                log_validation_event(contract_name, contract_version, column, "NotNull", "fail",
-                    Some(&format!("null_count={}", null_count)));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "NotNull",
+                    "fail",
+                    Some(&format!("null_count={}", null_count)),
+                );
             } else {
-                log_validation_event(contract_name, contract_version, column, "NotNull", "pass", None);
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "NotNull",
+                    "pass",
+                    None,
+                );
             }
         }
 
@@ -28,10 +41,23 @@ pub fn apply_column_contract(
             let series = df.column(column)?;
             let unique_count = series.n_unique()?;
             if unique_count != series.len() {
-                log_validation_event(contract_name, contract_version, column, "Unique", "fail",
-                    Some(&format!("unique_count={}", unique_count)));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Unique",
+                    "fail",
+                    Some(&format!("unique_count={}", unique_count)),
+                );
             } else {
-                log_validation_event(contract_name, contract_version, column, "Unique", "pass", None);
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Unique",
+                    "pass",
+                    None,
+                );
             }
         }
 
@@ -48,10 +74,23 @@ pub fn apply_column_contract(
                 }
             }
             if bad_count > 0 {
-                log_validation_event(contract_name, contract_version, column, "Pattern", "fail",
-                    Some(&format!("bad_count={}, pattern={}", bad_count, pattern)));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Pattern",
+                    "fail",
+                    Some(&format!("bad_count={}, pattern={}", bad_count, pattern)),
+                );
             } else {
-                log_validation_event(contract_name, contract_version, column, "Pattern", "pass", None);
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Pattern",
+                    "pass",
+                    None,
+                );
             }
         }
 
@@ -66,10 +105,23 @@ pub fn apply_column_contract(
                 }
             }
             if bad_count > 0 {
-                log_validation_event(contract_name, contract_version, column, "MaxLength", "fail",
-                    Some(&format!("bad_count={}, max_length={}", bad_count, value)));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "MaxLength",
+                    "fail",
+                    Some(&format!("bad_count={}, max_length={}", bad_count, value)),
+                );
             } else {
-                log_validation_event(contract_name, contract_version, column, "MaxLength", "pass", None);
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "MaxLength",
+                    "pass",
+                    None,
+                );
             }
         }
 
@@ -79,14 +131,36 @@ pub fn apply_column_contract(
                 let mask = values.lt(*min) | values.gt(*max);
                 let bad_count = mask.sum().unwrap_or(0);
                 if bad_count > 0 {
-                    log_validation_event(contract_name, contract_version, column, "Range", "fail",
-                        Some(&format!("bad_count={}, min={}, max={}", bad_count, min, max)));
+                    log_validation_event(
+                        contract_name,
+                        contract_version,
+                        column,
+                        "Range",
+                        "fail",
+                        Some(&format!(
+                            "bad_count={}, min={}, max={}",
+                            bad_count, min, max
+                        )),
+                    );
                 } else {
-                    log_validation_event(contract_name, contract_version, column, "Range", "pass", None);
+                    log_validation_event(
+                        contract_name,
+                        contract_version,
+                        column,
+                        "Range",
+                        "pass",
+                        None,
+                    );
                 }
             } else {
-                log_validation_event(contract_name, contract_version, column, "Range", "skipped",
-                    Some("not numeric"));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Range",
+                    "skipped",
+                    Some("not numeric"),
+                );
             }
         }
 
@@ -102,10 +176,23 @@ pub fn apply_column_contract(
                 }
             }
             if bad_count > 0 {
-                log_validation_event(contract_name, contract_version, column, "InSet", "fail",
-                    Some(&format!("bad_count={}", bad_count)));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "InSet",
+                    "fail",
+                    Some(&format!("bad_count={}", bad_count)),
+                );
             } else {
-                log_validation_event(contract_name, contract_version, column, "InSet", "pass", None);
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "InSet",
+                    "pass",
+                    None,
+                );
             }
         }
 
@@ -122,31 +209,69 @@ pub fn apply_column_contract(
                 }
             }
             if bad_count > 0 {
-                log_validation_event(contract_name, contract_version, column, "Boolean", "fail",
-                    Some(&format!("bad_count={}", bad_count)));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Boolean",
+                    "fail",
+                    Some(&format!("bad_count={}", bad_count)),
+                );
             } else {
-                log_validation_event(contract_name, contract_version, column, "Boolean", "pass", None);
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Boolean",
+                    "pass",
+                    None,
+                );
             }
         }
 
         ContractType::OutlierSigma { sigma } => {
             let series = df.column(column)?;
-            if let Ok(values) = series.f64() {
+
+            if series.dtype().is_numeric() {
+                // First, keep the casted series alive
+                let casted = series.cast(&DataType::Float64)?;
+                let values = casted.f64().expect("cast to f64 failed");
+
                 let mean = values.mean().unwrap_or(0.0);
                 let std = values.std(1).unwrap_or(0.0);
+
                 let abs_vals = values.apply(|opt_v| opt_v.map(|v| (v - mean).abs()));
                 let mask = abs_vals.gt(sigma * std);
                 let outliers = mask.sum().unwrap_or(0);
 
                 if outliers > 0 {
-                    log_validation_event(contract_name, contract_version, column, "OutlierSigma", "fail",
-                        Some(&format!("outliers={}, sigma={}", outliers, sigma)));
+                    log_validation_event(
+                        contract_name,
+                        contract_version,
+                        column,
+                        "OutlierSigma",
+                        "fail",
+                        Some(&format!("outliers={}, sigma={}", outliers, sigma)),
+                    );
                 } else {
-                    log_validation_event(contract_name, contract_version, column, "OutlierSigma", "pass", None);
+                    log_validation_event(
+                        contract_name,
+                        contract_version,
+                        column,
+                        "OutlierSigma",
+                        "pass",
+                        None,
+                    );
                 }
             } else {
-                log_validation_event(contract_name, contract_version, column, "OutlierSigma", "skipped",
-                    Some("not numeric"));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "OutlierSigma",
+                    "skipped",
+                    Some("not numeric"),
+                );
             }
         }
 
@@ -154,13 +279,30 @@ pub fn apply_column_contract(
             let series = df.column(column)?;
             let unique_count = series.n_unique()? as f64;
             let total = series.len() as f64;
-            let ratio = if total > 0.0 { unique_count / total } else { 0.0 };
+            let ratio = if total > 0.0 {
+                unique_count / total
+            } else {
+                0.0
+            };
 
             if ratio < *min_ratio {
-                log_validation_event(contract_name, contract_version, column, "Distinctness", "fail",
-                    Some(&format!("ratio={:.2}, min_ratio={}", ratio, min_ratio)));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Distinctness",
+                    "fail",
+                    Some(&format!("ratio={:.2}, min_ratio={}", ratio, min_ratio)),
+                );
             } else {
-                log_validation_event(contract_name, contract_version, column, "Distinctness", "pass", None);
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Distinctness",
+                    "pass",
+                    None,
+                );
             }
         }
 
@@ -171,10 +313,23 @@ pub fn apply_column_contract(
             let ratio = if total > 0.0 { non_null / total } else { 0.0 };
 
             if ratio < *min_ratio {
-                log_validation_event(contract_name, contract_version, column, "Completeness", "fail",
-                    Some(&format!("ratio={:.2}, min_ratio={}", ratio, min_ratio)));
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Completeness",
+                    "fail",
+                    Some(&format!("ratio={:.2}, min_ratio={}", ratio, min_ratio)),
+                );
             } else {
-                log_validation_event(contract_name, contract_version, column, "Completeness", "pass", None);
+                log_validation_event(
+                    contract_name,
+                    contract_version,
+                    column,
+                    "Completeness",
+                    "pass",
+                    None,
+                );
             }
         }
 

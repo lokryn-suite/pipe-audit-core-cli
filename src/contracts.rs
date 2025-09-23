@@ -1,11 +1,10 @@
-pub mod types;
 pub mod column;
-pub mod file;
 pub mod compound;
+pub mod file;
 pub mod schema;
+pub mod types;
 
-pub use types::ContractType;
-pub use column::ColumnContracts;
 pub use file::FileContracts;
+pub use schema::{SchemaContracts, load_contract_for_file};
+pub use types::ContractType;
 pub use compound::CompoundUnique;
-pub use schema::SchemaContracts;

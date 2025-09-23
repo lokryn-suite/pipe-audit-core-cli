@@ -1,14 +1,14 @@
 use chrono::Utc;
+use hostname;
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs::{self, File, OpenOptions};
-use std::io::{Write, BufReader, Read};
+use std::io::{BufReader, Read, Write};
 use std::path::PathBuf;
 use tracing::info;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use tracing_subscriber::fmt::time::UtcTime;
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use whoami;
-use hostname;
 
 /// Ensure logs/ exists
 fn ensure_logs_dir() -> PathBuf {
@@ -27,7 +27,9 @@ fn compute_sha256(path: &PathBuf) -> String {
     let mut buffer = [0u8; 8192];
     loop {
         let n = reader.read(&mut buffer).expect("failed to read file");
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         hasher.update(&buffer[..n]);
     }
     format!("{:x}", hasher.finalize())
@@ -42,7 +44,8 @@ fn append_to_ledger(filename: &str, hash: &str) {
         .open(ledger_path)
         .expect("cannot open hash_ledger.txt");
     let line = format!("{} {} {}\n", Utc::now().to_rfc3339(), filename, hash);
-    f.write_all(line.as_bytes()).expect("cannot write to ledger");
+    f.write_all(line.as_bytes())
+        .expect("cannot write to ledger");
 }
 
 /// Seal all unsealed log files (older than today, not yet in ledger)
@@ -57,9 +60,13 @@ fn seal_unsealed_logs(logs_dir: &PathBuf, today: &str) {
             if let Some(fname) = path.file_name().and_then(|s| s.to_str()) {
                 if fname.starts_with("audit-") && fname.ends_with(".jsonl") {
                     // skip today's file
-                    if fname.contains(today) { continue; }
+                    if fname.contains(today) {
+                        continue;
+                    }
                     // skip if already in ledger
-                    if ledger_contents.contains(fname) { continue; }
+                    if ledger_contents.contains(fname) {
+                        continue;
+                    }
 
                     // compute hash and append
                     let hash = compute_sha256(&path);
@@ -95,8 +102,7 @@ pub fn init_logging() {
         .into_owned();
 
     // Env filter (default INFO)
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     // JSON layer writing to daily file
     let file_layer = fmt::layer()
@@ -114,4 +120,35 @@ pub fn init_logging() {
         .init();
 
     info!(user=%user, host=%host, event="startup", "logging initialized");
+}
+
+/// Helper to log validation events in a consistent way
+pub fn log_validation_event(
+    contract_name: &str,
+    contract_version: &str,
+    column: &str,
+    rule: &str,
+    result: &str,
+    details: Option<&str>,
+) {
+    if let Some(d) = details {
+        info!(
+            event = "validation",
+            contract_name = %contract_name,
+            contract_version = %contract_version,
+            column = %column,
+            rule = %rule,
+            result = %result,
+            details = %d
+        );
+    } else {
+        info!(
+            event = "validation",
+            contract_name = %contract_name,
+            contract_version = %contract_version,
+            column = %column,
+            rule = %rule,
+            result = %result
+        );
+    }
 }

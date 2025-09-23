@@ -24,4 +24,4 @@ whoami = "1.6.1"
 
 [dev-dependencies]
 anyhow = "1.0.100"
-clippy = "0.0.302"
+

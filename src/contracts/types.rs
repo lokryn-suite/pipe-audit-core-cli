@@ -14,4 +14,5 @@ pub enum ContractType {
     Distinctness { min_ratio: f64 },
     Completeness { min_ratio: f64 },
     RowCount { min: usize, max: Option<usize> },
+    
 }

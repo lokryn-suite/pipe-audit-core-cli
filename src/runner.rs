@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use polars::prelude::*;
+use std::path::PathBuf;
 
 use crate::contracts::load_contract_for_file;
 use crate::drivers::get_driver;

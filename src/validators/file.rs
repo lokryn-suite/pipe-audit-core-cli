@@ -1,6 +1,6 @@
-use polars::prelude::*;
 use crate::contracts::ContractType;
-use super::logging::log_validation_event;
+use crate::logging::log_validation_event;
+use polars::prelude::*;
 
 /// Apply a file-level contract (e.g. row count, completeness)
 pub fn apply_file_contract(
@@ -36,12 +36,33 @@ pub fn apply_file_contract(
         ContractType::Completeness { min_ratio } => {
             let total = df.height();
             let mut complete_rows = 0;
-            for row in df.iter() {
-                if row.into_iter().all(|v| v.is_some()) {
+
+            for idx in 0..total {
+                let mut row_complete = true;
+                for series in df.get_columns() {
+                    match series.get(idx) {
+                        Ok(val) => {
+                            if val.is_null() {
+                                row_complete = false;
+                                break;
+                            }
+                        }
+                        Err(_) => {
+                            row_complete = false;
+                            break;
+                        }
+                    }
+                }
+                if row_complete {
                     complete_rows += 1;
                 }
             }
-            let ratio = if total > 0 { complete_rows as f64 / total as f64 } else { 0.0 };
+
+            let ratio = if total > 0 {
+                complete_rows as f64 / total as f64
+            } else {
+                0.0
+            };
             if ratio < *min_ratio {
                 log_validation_event(
                     contract_name,
