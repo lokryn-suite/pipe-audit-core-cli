@@ -26,5 +26,5 @@ pub enum Commands {
         /// Run all contracts in the data folder
         #[arg(long)]
         all: bool,
-    }
+    },
 }

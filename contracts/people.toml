@@ -1,6 +1,7 @@
-# people.toml
+name = "people"
+version = "0.1.0"
 
-[table]
+[file]
 contracts = [
   { rule = "row_count", min = 1_500_000, max = 2_000_000 }
 ]

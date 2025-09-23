@@ -1,5 +1,5 @@
-use glob::glob;
 use crate::runner;
+use glob::glob;
 
 /// Run all validations
 pub fn run(all: bool) {

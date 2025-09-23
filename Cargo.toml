@@ -4,17 +4,23 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+chrono = "0.4.42"
 clap = { version = "4.5.48", features = ["derive"] }
 duckdb = "1.4.0"
 glob = "0.3.3"
+hostname = "0.4.1"
 polars = { version = "0.51.0", features = ["csv", "parquet"] }
 polars-io = "0.51.0"
 postgres = "0.19.10"
 regex = "1.11.2"
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = "1.0.145"
+sha2 = "0.10.9"
 tokio = { version = "1.47.1", features = ["full"] }
 toml = "0.9.7"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "json", "time"] }
+whoami = "1.6.1"
 
 [dev-dependencies]
 anyhow = "1.0.100"

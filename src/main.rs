@@ -1,13 +1,16 @@
 mod cli;
-mod contracts;
-mod runner;
 mod commands;
+mod contracts;
+mod logging;
+mod runner;
 mod validators;
 
 use clap::Parser;
 use cli::{Cli, Commands};
 
 fn main() {
+    logging::init_logging();
+
     let cli = Cli::parse();
 
     match cli.command {

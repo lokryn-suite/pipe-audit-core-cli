@@ -1,6 +1,7 @@
-# contracts/sample_contracts.toml
 
-# Example: enforce uniqueness + not null on Region_ID
+name = "regions"
+version = "0.1.0"
+
 [[columns]]
 name = "Region_ID"
 contracts = [
