@@ -2,17 +2,17 @@ use super::Connector;
 use anyhow::Result;
 use std::io::Read;
 
-pub struct SftpConnector;
+pub struct AzureConnector;
 
-impl SftpConnector {
+impl AzureConnector {
 	pub fn from_url(_url: &url::Url) -> Result<Self> {
-		Ok(SftpConnector)
+		Ok(AzureConnector)
 	}
 }
 
-impl Connector for SftpConnector {
+impl Connector for AzureConnector {
 	fn scheme(&self) -> &'static str {
-		"sftp"
+		"azure"
 	}
 
 	fn list(&self, _prefix: &str) -> Result<Vec<String>> {
@@ -20,6 +20,6 @@ impl Connector for SftpConnector {
 	}
 
 	fn fetch(&self, _location: &str) -> Result<Box<dyn Read>> {
-		Err(anyhow::anyhow!("SFTP connector not implemented"))
+		Err(anyhow::anyhow!("Azure connector not implemented"))
 	}
 }

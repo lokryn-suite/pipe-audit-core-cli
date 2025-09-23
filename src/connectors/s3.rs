@@ -2,17 +2,18 @@ use super::Connector;
 use anyhow::Result;
 use std::io::Read;
 
-pub struct SftpConnector;
+pub struct S3Connector;
 
-impl SftpConnector {
+impl S3Connector {
 	pub fn from_url(_url: &url::Url) -> Result<Self> {
-		Ok(SftpConnector)
+		// Minimal stub — real implementation omitted
+		Ok(S3Connector)
 	}
 }
 
-impl Connector for SftpConnector {
+impl Connector for S3Connector {
 	fn scheme(&self) -> &'static str {
-		"sftp"
+		"s3"
 	}
 
 	fn list(&self, _prefix: &str) -> Result<Vec<String>> {
@@ -20,6 +21,6 @@ impl Connector for SftpConnector {
 	}
 
 	fn fetch(&self, _location: &str) -> Result<Box<dyn Read>> {
-		Err(anyhow::anyhow!("SFTP connector not implemented"))
+		Err(anyhow::anyhow!("S3 connector not implemented"))
 	}
 }
