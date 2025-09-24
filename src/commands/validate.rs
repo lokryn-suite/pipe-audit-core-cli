@@ -1,6 +1,6 @@
 use crate::contracts::FileContracts;
 
-pub fn run(file: &str) {
+pub async fn run(file: &str) {
     let path = format!("contracts/{}", file);
 
     match std::fs::read_to_string(&path) {

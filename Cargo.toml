@@ -1,7 +1,8 @@
 [package]
-name = "data_quality"
-version = "0.1.0"
+name = "pipe_audit"
+version = "0.1.1"
 edition = "2024"
+
 
 [dependencies]
 chrono = "0.4.42"
@@ -23,7 +24,13 @@ tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "jso
 whoami = "1.6.1"
 anyhow = "1.0.100"
 url = "2.4.0"
+aws-config = "1.1.7"
+aws-sdk-s3 = "1.17.0"
+async-trait = "0.1.74"
 
 [dev-dependencies]
 anyhow = "1.0.100"
 
+[[bin]]
+name = "pipa"
+path = "src/main.rs"

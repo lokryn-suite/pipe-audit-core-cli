@@ -10,16 +10,17 @@ impl GcsConnector {
 	}
 }
 
+#[async_trait::async_trait]
 impl Connector for GcsConnector {
 	fn scheme(&self) -> &'static str {
 		"gcs"
 	}
 
-	fn list(&self, _prefix: &str) -> Result<Vec<String>> {
+	async fn list(&self, _prefix: &str) -> Result<Vec<String>> {
 		Ok(vec![])
 	}
 
-	fn fetch(&self, _location: &str) -> Result<Box<dyn Read>> {
+	async fn fetch(&self, _location: &str) -> Result<Box<dyn Read>> {
 		Err(anyhow::anyhow!("GCS connector not implemented"))
 	}
 }

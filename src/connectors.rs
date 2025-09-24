@@ -3,12 +3,13 @@ use anyhow::Result;
 use url::Url;
 
 /// Common interface for all connectors
+#[async_trait::async_trait]
 pub trait Connector: Send + Sync {
     fn scheme(&self) -> &'static str;
 
-    fn list(&self, prefix: &str) -> Result<Vec<String>>;
+    async fn list(&self, prefix: &str) -> Result<Vec<String>>;
 
-    fn fetch(&self, location: &str) -> Result<Box<dyn Read>>;
+    async fn fetch(&self, location: &str) -> Result<Box<dyn Read>>;
 }
 
 // bring in each connector implementation
@@ -25,11 +26,11 @@ pub use gcs::GcsConnector;
 pub use sftp::SftpConnector;
 
 /// Factory: pick the right connector based on URI scheme
-pub fn from_connection_string(conn: &str) -> Result<Box<dyn Connector>> {
+pub async fn from_connection_string(conn: &str) -> Result<Box<dyn Connector>> {
     let url = Url::parse(conn)?;
     match url.scheme() {
         "file" => Ok(Box::new(LocalConnector::new())),
-        "s3"   => Ok(Box::new(S3Connector::from_url(&url)?)),
+        "s3"   => Ok(Box::new(S3Connector::from_url_async(&url).await?)),
         "azure" => Ok(Box::new(AzureConnector::from_url(&url)?)),
         "gcs"   => Ok(Box::new(GcsConnector::from_url(&url)?)),
         "sftp"  => Ok(Box::new(SftpConnector::from_url(&url)?)),

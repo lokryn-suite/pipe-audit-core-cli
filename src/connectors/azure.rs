@@ -10,16 +10,17 @@ impl AzureConnector {
 	}
 }
 
+#[async_trait::async_trait]
 impl Connector for AzureConnector {
 	fn scheme(&self) -> &'static str {
 		"azure"
 	}
 
-	fn list(&self, _prefix: &str) -> Result<Vec<String>> {
+	async fn list(&self, _prefix: &str) -> Result<Vec<String>> {
 		Ok(vec![])
 	}
 
-	fn fetch(&self, _location: &str) -> Result<Box<dyn Read>> {
+	async fn fetch(&self, _location: &str) -> Result<Box<dyn Read>> {
 		Err(anyhow::anyhow!("Azure connector not implemented"))
 	}
 }

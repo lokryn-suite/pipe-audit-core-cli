@@ -1,20 +1,21 @@
 
 use clap::Parser;
-use data_quality::cli::{Cli, Commands};
-use data_quality::logging;
-use data_quality::commands;
+use pipe_audit::cli::{Cli, Commands};
+use pipe_audit::logging;
+use pipe_audit::commands;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     logging::init_logging();
 
     let cli = Cli::parse();
 
     match cli.command {
         Some(Commands::Validate { file }) => {
-            commands::validate::run(&file);
+            commands::validate::run(&file).await;
         }
         Some(Commands::Run { all }) => {
-            commands::run::run(all);
+            commands::run::run(all).await;
         }
         None => eprintln!("No command provided. Try --help."),
     }
