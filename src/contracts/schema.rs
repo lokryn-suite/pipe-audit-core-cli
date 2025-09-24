@@ -4,12 +4,29 @@ use std::path::Path;
 use super::{column::ColumnContracts, compound::CompoundUnique, file::FileContracts};
 
 #[derive(Debug, Deserialize)]
-pub struct SchemaContracts {
+pub struct Contract {
     pub name: String,
     pub version: String,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Location {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub location: Option<String>,
+    pub profile: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SchemaContracts {
+    pub contract: Contract,
     pub file: Option<FileContracts>,
     pub columns: Vec<ColumnContracts>,
     pub compound_unique: Option<Vec<CompoundUnique>>,
+    pub source: Location,
+    pub destination: Option<Location>,
+    pub quarantine: Option<Location>,
 }
 
 /// Load the TOML contract file that matches the data filename

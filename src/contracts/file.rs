@@ -3,5 +3,5 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct FileContracts {
-    pub contracts: Vec<ContractType>,
+    pub validation: Vec<ContractType>,
 }

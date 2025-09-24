@@ -6,22 +6,22 @@ use polars::prelude::*;
 pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> PolarsResult<()> {
     // File-level contracts
     if let Some(file) = &contracts.file {
-        for contract in &file.contracts {
-            apply_file_contract(df, contract, &contracts.name, &contracts.version)?;
+        for contract in &file.validation {
+            apply_file_contract(df, contract, &contracts.contract.name, &contracts.contract.version)?;
         }
     }
 
     // Column-level contracts
     for col in &contracts.columns {
-        for contract in &col.contracts {
-            apply_column_contract(df, &col.name, contract, &contracts.name, &contracts.version)?;
+        for contract in &col.validation {
+            apply_column_contract(df, &col.name, contract, &contracts.contract.name, &contracts.contract.name)?;
         }
     }
 
     // Compound uniqueness contracts
     if let Some(compounds) = &contracts.compound_unique {
         for cu in compounds {
-            apply_compound_unique(df, &cu.columns, &contracts.name, &contracts.version)?;
+            apply_compound_unique(df, &cu.columns, &contracts.contract.name, &contracts.contract.name)?;
         }
     }
 

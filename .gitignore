@@ -21,6 +21,8 @@ data/
 *.secrets.toml
 credentials.toml
 .pipa/
+profiles.toml
+
 
 # OS / Editor
 .DS_Store
@@ -28,3 +30,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+PROJECT_NOTES.md
+
