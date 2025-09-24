@@ -27,4 +27,20 @@ pub enum Commands {
         #[arg(long)]
         all: bool,
     },
+    /// Manage authentication profiles
+    Auth {
+        #[command(subcommand)]
+        auth_command: AuthCommands,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AuthCommands {
+    /// List available profiles
+    List,
+    /// Test connectivity for a profile
+    Test {
+        /// Profile name
+        profile: String,
+    },
 }

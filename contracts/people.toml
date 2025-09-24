@@ -27,7 +27,7 @@ validation = [
 columns = ["household_id", "person_id"]
 
 [source]
-type = "local"
+type = "s3"
 location = "s3://raw/ondoriya/seed_data/people.csv"
 profile = "minio_raw"
 

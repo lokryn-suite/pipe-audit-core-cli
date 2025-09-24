@@ -6,6 +6,6 @@ pub mod contracts;
 pub mod drivers;
 pub mod engine;
 pub mod logging;
+pub mod profiles;
 pub mod runner;
 pub mod validators;
-pub mod profiles;

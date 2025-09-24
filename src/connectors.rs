@@ -34,7 +34,9 @@ pub async fn from_connection_string_with_profile(
     profiles: &Profiles,
 ) -> Result<Box<dyn Connector>> {
     let profile = if let Some(profile_name) = &location.profile {
-        profiles.get(profile_name).ok_or_else(|| anyhow::anyhow!("Profile '{}' not found", profile_name))?
+        profiles
+            .get(profile_name)
+            .ok_or_else(|| anyhow::anyhow!("Profile '{}' not found", profile_name))?
     } else {
         return Err(anyhow::anyhow!("No profile specified for remote source"));
     };
@@ -42,8 +44,13 @@ pub async fn from_connection_string_with_profile(
     match location.r#type.as_str() {
         "s3" => {
             let parsed_url = url::Url::parse(url)?;
-            Ok(Box::new(S3Connector::from_profile_and_url(profile, &parsed_url).await?))
+            Ok(Box::new(
+                S3Connector::from_profile_and_url(profile, &parsed_url).await?,
+            ))
         }
-        _ => Err(anyhow::anyhow!("Unsupported connector type: {}", location.r#type)),
+        _ => Err(anyhow::anyhow!(
+            "Unsupported connector type: {}",
+            location.r#type
+        )),
     }
 }

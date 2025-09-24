@@ -39,23 +39,22 @@ async fn validate_with_contract(
                 "s3" => {
                     let connector = S3Connector::from_profile_and_url(profile, &url).await?;
                     let mut reader = connector.fetch(&url.path()[1..]).await?;
-                    let mut buffer = String::new();
-                    std::io::Read::read_to_string(&mut reader, &mut buffer)?;
+                    let mut buffer = Vec::new();
+                    std::io::Read::read_to_end(&mut reader, &mut buffer)?;
                     buffer
                 }
-                "local" => {
-                    std::fs::read_to_string(file)?
-                }
+                "local" => std::fs::read(file)?,
                 _ => return Err("Unsupported source type".into()),
             }
         } else {
             return Err(format!("Profile '{}' not found", profile_name).into());
         }
     } else {
-        std::fs::read_to_string(file)?
+        std::fs::read(file)?
     };
 
-    runner::validate_data(&data, &contracts).await?;
+    let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("csv");
+    runner::validate_data(&data, extension, &contracts).await?;
 
     println!("✅ Validation passed for {}", file);
     Ok(())
