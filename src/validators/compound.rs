@@ -1,6 +1,6 @@
 use crate::logging::log_validation_event;
-use polars::prelude::*;
 use polars::frame::UniqueKeepStrategy;
+use polars::prelude::*;
 
 /// Apply compound uniqueness across multiple columns
 pub fn apply_compound_unique(
@@ -50,14 +50,15 @@ mod tests {
         let df = df![
             "household_id" => &[1, 1, 2],
             "person_id"    => &[1, 1, 2]
-        ].unwrap();
+        ]
+        .unwrap();
 
         // Should run without panic
         let result = apply_compound_unique(
             &df,
             &vec!["household_id".to_string(), "person_id".to_string()],
             "test_contract",
-            "0.1.0"
+            "0.1.0",
         );
 
         assert!(result.is_ok());

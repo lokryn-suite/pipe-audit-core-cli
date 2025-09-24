@@ -7,21 +7,37 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Polars
     // File-level contracts
     if let Some(file) = &contracts.file {
         for contract in &file.validation {
-            apply_file_contract(df, contract, &contracts.contract.name, &contracts.contract.version)?;
+            apply_file_contract(
+                df,
+                contract,
+                &contracts.contract.name,
+                &contracts.contract.version,
+            )?;
         }
     }
 
     // Column-level contracts
     for col in &contracts.columns {
         for contract in &col.validation {
-            apply_column_contract(df, &col.name, contract, &contracts.contract.name, &contracts.contract.name)?;
+            apply_column_contract(
+                df,
+                &col.name,
+                contract,
+                &contracts.contract.name,
+                &contracts.contract.name,
+            )?;
         }
     }
 
     // Compound uniqueness contracts
     if let Some(compounds) = &contracts.compound_unique {
         for cu in compounds {
-            apply_compound_unique(df, &cu.columns, &contracts.contract.name, &contracts.contract.name)?;
+            apply_compound_unique(
+                df,
+                &cu.columns,
+                &contracts.contract.name,
+                &contracts.contract.name,
+            )?;
         }
     }
 

@@ -1,6 +1,5 @@
-
-use data_quality::engine::validate_dataframe;
 use data_quality::contracts::SchemaContracts;
+use data_quality::engine::validate_dataframe;
 use polars::prelude::*;
 
 #[test]
@@ -9,7 +8,8 @@ fn end_to_end_validation() {
     let df = df![
         "id" => &[1, 2, 2],
         "region_id" => &[10, 20, 20]
-    ].unwrap();
+    ]
+    .unwrap();
 
     // Minimal contract (could also load from TOML)
     let contract = SchemaContracts {

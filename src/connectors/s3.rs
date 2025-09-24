@@ -1,8 +1,9 @@
 use super::Connector;
+use crate::profiles::Profile;
 use anyhow::{Context, Result};
 use aws_config::BehaviorVersion;
 use aws_sdk_s3::Client as S3Client;
-use std::io::{Read, Cursor};
+use std::io::{Cursor, Read};
 
 pub struct S3Connector {
     client: S3Client,
@@ -11,38 +12,28 @@ pub struct S3Connector {
 }
 
 impl S3Connector {
-    pub async fn from_url_async(url: &url::Url) -> Result<Self> {
-        let bucket = url.host_str()
+    pub async fn from_profile_and_url(profile: &Profile, url: &url::Url) -> Result<Self> {
+        let bucket = url
+            .host_str()
             .ok_or_else(|| anyhow::anyhow!("Invalid S3 URL: missing bucket name"))?
             .to_string();
 
-        let query_params: std::collections::HashMap<String, String> = url.query_pairs()
-            .map(|(k, v)| (k.to_string(), v.to_string()))
-            .collect();
-
-        let region = query_params.get("region")
-            .cloned()
+        let region = profile
+            .region
+            .clone()
             .unwrap_or_else(|| "us-east-1".to_string());
 
-        // Load AWS configuration
         let mut config_builder = aws_config::defaults(BehaviorVersion::latest())
             .region(aws_config::Region::new(region.clone()));
 
-        // Check for custom endpoint (for MinIO compatibility)
-        if let Some(endpoint) = query_params.get("endpoint") {
+        if let Some(endpoint) = &profile.endpoint {
             config_builder = config_builder.endpoint_url(endpoint);
-        }
-
-        // Check for force path style (required for MinIO)
-        if query_params.get("force_path_style").map(|v| v == "true").unwrap_or(false) {
-            // This will be handled in the client configuration
         }
 
         let config = config_builder.load().await;
         let mut client_config = aws_sdk_s3::config::Builder::from(&config);
-        
-        // Enable path-style addressing for MinIO
-        if query_params.get("force_path_style").map(|v| v == "true").unwrap_or(false) {
+
+        if profile.path_style.unwrap_or(false) {
             client_config = client_config.force_path_style(true);
         }
 
@@ -53,6 +44,10 @@ impl S3Connector {
             bucket,
             region: Some(region),
         })
+    }
+
+    pub async fn from_url_async(_url: &url::Url) -> Result<Self> {
+        Err(anyhow::anyhow!("from_url_async not implemented; use from_profile_and_url"))
     }
 
     fn parse_s3_path(&self, path: &str) -> Result<String> {
@@ -74,8 +69,9 @@ impl Connector for S3Connector {
 
     async fn list(&self, prefix: &str) -> Result<Vec<String>> {
         let prefix_key = self.parse_s3_path(prefix)?;
-        
-        let resp = self.client
+
+        let resp = self
+            .client
             .list_objects_v2()
             .bucket(&self.bucket)
             .prefix(&prefix_key)
@@ -97,8 +93,9 @@ impl Connector for S3Connector {
 
     async fn fetch(&self, location: &str) -> Result<Box<dyn Read>> {
         let key = self.parse_s3_path(location)?;
-        
-        let resp = self.client
+
+        let resp = self
+            .client
             .get_object()
             .bucket(&self.bucket)
             .key(&key)
@@ -107,7 +104,8 @@ impl Connector for S3Connector {
             .context("Failed to fetch S3 object")?;
 
         // Read the entire object into memory as bytes
-        let data = resp.body
+        let data = resp
+            .body
             .collect()
             .await
             .context("Failed to read S3 object body")?

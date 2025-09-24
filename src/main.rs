@@ -1,8 +1,7 @@
-
 use clap::Parser;
 use pipe_audit::cli::{Cli, Commands};
-use pipe_audit::logging;
 use pipe_audit::commands;
+use pipe_audit::logging;
 
 #[tokio::main]
 async fn main() {
