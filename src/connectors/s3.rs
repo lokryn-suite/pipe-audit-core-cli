@@ -3,6 +3,7 @@ use crate::profiles::Profile;
 use anyhow::{Context, Result};
 use aws_config::BehaviorVersion;
 use aws_sdk_s3::Client as S3Client;
+use aws_sdk_s3::config::Credentials;
 use std::io::{Cursor, Read};
 
 pub struct S3Connector {
@@ -35,6 +36,17 @@ impl S3Connector {
 
         // Build S3 config with optional path-style
         let mut s3_config = aws_sdk_s3::config::Builder::from(&base_config);
+        if !profile.access_key.is_empty() && !profile.secret_key.is_empty() {
+            let creds = Credentials::new(
+                profile.access_key.clone(),
+                profile.secret_key.clone(),
+                None,
+                None,
+                "profile",
+            );
+            s3_config = s3_config.credentials_provider(creds);
+        }
+
         if profile.path_style.unwrap_or(false) {
             s3_config = s3_config.force_path_style(true);
         }
@@ -83,7 +95,6 @@ impl Connector for S3Connector {
 
     async fn fetch(&self, location: &str) -> Result<Box<dyn Read>> {
         let key = self.parse_s3_path(location)?;
-
         let resp = self
             .client
             .get_object()

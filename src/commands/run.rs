@@ -9,15 +9,15 @@ pub async fn run(all: bool) {
     if all {
         let profiles = load_profiles().expect("Failed to load profiles");
 
-        for entry in glob("data/*.csv").expect("Failed to read glob pattern") {
+        for entry in glob("contracts/*.toml").expect("Failed to read glob pattern") {
             match entry {
                 Ok(path) => {
-                    let file = path.to_string_lossy().to_string();
-                    if let Err(e) = validate_with_contract(&file, &profiles).await {
-                        eprintln!("❌ Validation failed for {}: {e}", file);
+                    let contract_file = path.to_string_lossy().to_string();
+                    if let Err(e) = validate_with_contract(&contract_file, &profiles).await {
+                        eprintln!("❌ Validation failed for {}: {e}", contract_file);
                     }
                 }
-                Err(e) => eprintln!("❌ Error reading file: {e}"),
+                Err(e) => eprintln!("❌ Error reading contract file: {e}"),
             }
         }
     } else {
@@ -26,36 +26,67 @@ pub async fn run(all: bool) {
 }
 
 async fn validate_with_contract(
-    file: &str,
+    contract_path: &str,
     profiles: &crate::profiles::Profiles,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let path = Path::new(file);
+    let path = Path::new(contract_path);
     let contracts = load_contract_for_file(path);
 
-    let data = if let Some(profile_name) = &contracts.source.profile {
-        if let Some(profile) = profiles.get(profile_name) {
-            let url = url::Url::parse(&contracts.source.location.as_ref().unwrap())?;
-            match contracts.source.r#type.as_str() {
-                "s3" => {
-                    let connector = S3Connector::from_profile_and_url(profile, &url).await?;
-                    let mut reader = connector.fetch(&url.path()[1..]).await?;
-                    let mut buffer = Vec::new();
-                    std::io::Read::read_to_end(&mut reader, &mut buffer)?;
-                    buffer
-                }
-                "local" => std::fs::read(file)?,
-                _ => return Err("Unsupported source type".into()),
-            }
-        } else {
-            return Err(format!("Profile '{}' not found", profile_name).into());
+    let source = contracts
+        .source
+        .as_ref()
+        .ok_or("Contract missing [source] section")?;
+
+    let data: Vec<u8> = match source.r#type.as_str() {
+        "local" => {
+            let location = source.location.as_ref().ok_or("Local source missing location")?;
+            println!("📂 Reading local file {}", location);
+            std::fs::read(location)?
         }
-    } else {
-        std::fs::read(file)?
+        "s3" => {
+            let profile_name = source.profile.as_ref().ok_or("S3 source requires profile")?;
+            let profile = profiles
+                .get(profile_name)
+                .ok_or_else(|| format!("Profile '{}' not found", profile_name))?;
+            let location = source.location.as_ref().ok_or("S3 source missing location")?;
+            
+            println!("🔎 Fetching {} via profile {}", location, profile_name);
+            let url = url::Url::parse(location)?;
+            let connector = S3Connector::from_profile_and_url(profile, &url).await?;
+            let mut reader = connector.fetch(location).await?;
+            let mut buffer = Vec::new();
+            std::io::Read::read_to_end(&mut reader, &mut buffer)?;
+            buffer
+        }
+        "azure" => {
+            let location = source.location.as_ref().ok_or("Azure source missing location")?;
+            println!("☁️ Azure fetch not yet implemented for {}", location);
+            return Err("Azure connector not implemented".into());
+        }
+        "gcs" => {
+            let location = source.location.as_ref().ok_or("GCS source missing location")?;
+            println!("☁️ GCS fetch not yet implemented for {}", location);
+            return Err("GCS connector not implemented".into());
+        }
+        "sftp" => {
+            let location = source.location.as_ref().ok_or("SFTP source missing location")?;
+            println!("🔐 SFTP fetch not yet implemented for {}", location);
+            return Err("SFTP connector not implemented".into());
+        }
+        "not_moved" => {
+            println!("⚠️ Source marked as not_moved, skipping");
+            return Ok(());
+        }
+        other => return Err(format!("Unsupported source type: {}", other).into()),
     };
 
-    let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("csv");
-    runner::validate_data(&data, extension, &contracts).await?;
+    let extension = source
+        .location
+        .as_ref()
+        .and_then(|loc| Path::new(loc).extension().and_then(|s| s.to_str()))
+        .unwrap_or("csv");
 
-    println!("✅ Validation passed for {}", file);
+    runner::validate_data(&data, extension, &contracts).await?;
+    println!("✅ Validation passed for {}", contract_path);
     Ok(())
 }

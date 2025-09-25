@@ -11,7 +11,7 @@ pub struct Contract {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Location {
+pub struct Source {
     #[serde(rename = "type")]
     pub r#type: String,
     pub location: Option<String>,
@@ -24,9 +24,9 @@ pub struct SchemaContracts {
     pub file: Option<FileContracts>,
     pub columns: Vec<ColumnContracts>,
     pub compound_unique: Option<Vec<CompoundUnique>>,
-    pub source: Location,
-    pub destination: Option<Location>,
-    pub quarantine: Option<Location>,
+    pub source: Option<Source>,
+    pub destination: Option<Source>,
+    pub quarantine: Option<Source>,
 }
 
 /// Load the TOML contract file that matches the data filename

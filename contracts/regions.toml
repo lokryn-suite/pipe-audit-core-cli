@@ -101,3 +101,4 @@ validation = [
 
 [source]
 type = "local"
+location = "data/regions.csv"
