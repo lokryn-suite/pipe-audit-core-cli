@@ -1,37 +1,80 @@
 [package]
-name = "pipe_audit"
+name = "pipe_audit_core"
 version = "0.1.1"
-edition = "2024"
+authors = ["Daniel Wallace"]
+edition = "2021"
+description = "Universal data validation framework"
+repository = "https://github.com/developers/lokryn-pipeaudit-core"
+license = "MIT OR Apache-2.0"
+keywords = ["data", "validation", "quality", "testing", "compliance"]
+categories = ["development-tools::testing", "database"]
 
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:tokio"]
+server = ["dep:axum", "dep:tower", "dep:tower-http", "dep:utoipa", "dep:utoipa-swagger-ui"]
+all = ["cli", "server"]
 
 [dependencies]
+# Core Dependencies
 chrono = "0.4.42"
-clap = { version = "4.5.48", features = ["derive"] }
 dotenv = "0.15"
-duckdb = "1.4.0"
 glob = "0.3.3"
 hostname = "0.4.1"
-polars = { version = "0.51.0", features = ["csv", "parquet"] }
+polars = { version = "0.51.0", features = [
+    "csv", 
+    "parquet", 
+    "is_in", 
+    "strings", 
+    "abs", 
+    "lazy"
+]}
+polars-ops = "0.51.0"
 polars-io = "0.51.0"
-postgres = "0.19.10"
+toml = "0.9.7"
 regex = "1.11.2"
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = "1.0.145"
 sha2 = "0.10.9"
-tokio = { version = "1.47.1", features = ["full"] }
-toml = "0.9.7"
+url = "2.4.0"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "json", "time"] }
 whoami = "1.6.1"
 anyhow = "1.0.100"
-url = "2.4.0"
+thiserror = "1.0"
+once_cell = "1.19"
+
+# Storage Connectors
 aws-config = "1.1.7"
 aws-sdk-s3 = "1.17.0"
+
 async-trait = "0.1.74"
 
+# Cli Dependencies
+clap = { version = "4.5.48", features = ["derive"], optional= true }
+tokio = { version = "1.47.1", features = ["full"], optional = true }
+
+# Server Dependencies
+axum = { version = "0.7", optional = true }
+tower = { version = "0.4", optional = true }
+tower-http = { version = "0.5", features = ["cors", "trace"], optional = true }
+utoipa = { version = "4", features = ["axum_extras"], optional = true }
+utoipa-swagger-ui = { version = "6", features = ["axum"], optional = true }
+
+
 [dev-dependencies]
-anyhow = "1.0.100"
+tempfile = "3.8"
+pretty_assertions = "1.4"
 
 [[bin]]
 name = "pipa"
 path = "src/main.rs"
+required-features = ["cli"]
+
+[lib]
+name = "pipa"
+path = "src/lib.rs"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -1,46 +1,78 @@
 use clap::{Parser, Subcommand};
 
-/// My Program: a structured CLI example
 #[derive(Parser, Debug)]
-#[command(name = "data-quality")]
+#[command(name = "pipa")]
 #[command(about = "Data quality engine CLI", long_about = None)]
 pub struct Cli {
-    /// Activate verbose mode
     #[arg(short, long)]
     pub verbose: bool,
 
-    /// Subcommands like `init`, `run`, etc.
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Initialize something
-    Validate {
-        /// Optional name
-        file: String,
-    },
-    /// Run contracts against data files
+    /// Run data validation against contracts
     Run {
-        /// Run all contracts in the data folder
+        /// Contract name (without .toml extension)
+        contract: Option<String>,
+        /// Run all contracts
         #[arg(long)]
         all: bool,
     },
-    /// Manage authentication profiles
-    Auth {
+    /// Manage contracts
+    Contract {
         #[command(subcommand)]
-        auth_command: AuthCommands,
+        contract_command: ContractCommands,
+    },
+    /// Manage profiles
+    Profile {
+        #[command(subcommand)]
+        profile_command: ProfileCommands,
+    },
+    /// System health check
+    Health,
+    /// Log management
+    Logs {
+        #[command(subcommand)]
+        logs_command: LogsCommands,
     },
 }
 
 #[derive(Subcommand, Debug)]
-pub enum AuthCommands {
+pub enum ContractCommands {
+    /// List available contracts
+    List,
+    /// Validate contract TOML syntax
+    Validate {
+        /// Contract file name
+        file: String,
+    },
+    /// Show contract details
+    Show {
+        /// Contract name
+        name: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ProfileCommands {
     /// List available profiles
     List,
-    /// Test connectivity for a profile
+    /// Test profile connectivity
     Test {
         /// Profile name
         profile: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum LogsCommands {
+    /// Verify log integrity
+    Verify {
+        /// Date to verify (YYYY-MM-DD format)
+        #[arg(long)]
+        date: Option<String>,
     },
 }

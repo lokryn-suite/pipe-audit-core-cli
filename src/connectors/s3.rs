@@ -2,8 +2,8 @@ use super::Connector;
 use crate::profiles::Profile;
 use anyhow::{Context, Result};
 use aws_config::BehaviorVersion;
-use aws_sdk_s3::Client as S3Client;
 use aws_sdk_s3::config::Credentials;
+use aws_sdk_s3::Client as S3Client;
 use std::io::{Cursor, Read};
 
 pub struct S3Connector {

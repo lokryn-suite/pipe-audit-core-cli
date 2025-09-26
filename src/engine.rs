@@ -1,43 +1,124 @@
-use crate::contracts::SchemaContracts;
-use crate::validators::{apply_column_contract, apply_compound_unique, apply_file_contract};
+// src/engine.rs
+
+use crate::contracts::{ContractType, SchemaContracts};
+use crate::error::ValidationResult;
+use crate::logging::log_validation_event;
+// Corrected, fully-qualified and explicit import paths
+use crate::validators::column::{
+    BooleanValidator, CompletenessValidator, DateFormatValidator, DistinctnessValidator,
+    InSetValidator, MaxLengthValidator, MeanBetweenValidator, NotInSetValidator, NotNullValidator,
+    OutlierSigmaValidator, PatternValidator, RangeValidator, StdevBetweenValidator, TypeValidator,
+    UniqueValidator,
+};
+use crate::validators::compound::CompoundUniqueValidator;
+use crate::validators::file::{FileCompletenessValidator, RowCountValidator};
+use crate::validators::{CompoundValidator, FileValidator, Validator};
 use polars::prelude::*;
 
-/// Validate a DataFrame against its schema contracts
-pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> PolarsResult<()> {
-    // File-level contracts
-    if let Some(file) = &contracts.file {
-        for contract in &file.validation {
-            apply_file_contract(
-                df,
-                contract,
-                &contracts.contract.name,
-                &contracts.contract.version,
-            )?;
+pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> ValidationResult<()> {
+    let contract_name = &contracts.contract.name;
+    let contract_version = &contracts.contract.version;
+
+    // --- File-Level Validation ---
+    if let Some(file_contracts) = &contracts.file {
+        for contract_rule in &file_contracts.validation {
+            let validator: Box<dyn FileValidator> = match contract_rule {
+                ContractType::RowCount { min, max } => Box::new(RowCountValidator {
+                    min: *min,
+                    max: *max,
+                }),
+                ContractType::Completeness { min_ratio } => Box::new(FileCompletenessValidator {
+                    min_ratio: *min_ratio,
+                }),
+                _ => continue,
+            };
+            let report = validator.validate(df)?;
+            log_validation_event(
+                contract_name,
+                contract_version,
+                "file",
+                validator.name(),
+                report.status,
+                report.details.as_deref(),
+            );
         }
     }
 
-    // Column-level contracts
+    // --- Column-Level Validation ---
     for col in &contracts.columns {
-        for contract in &col.validation {
-            apply_column_contract(
-                df,
+
+        for contract_rule in &col.validation {
+            let validator: Box<dyn Validator> = match contract_rule {
+                ContractType::NotNull => Box::new(NotNullValidator),
+                ContractType::Unique => Box::new(UniqueValidator),
+                ContractType::Boolean => Box::new(BooleanValidator),
+                ContractType::Range { min, max } => Box::new(RangeValidator {
+                    min: *min,
+                    max: *max,
+                }),
+                ContractType::Pattern { pattern } => Box::new(PatternValidator {
+                    pattern: pattern.clone(),
+                }),
+                ContractType::MaxLength { value } => Box::new(MaxLengthValidator { value: *value }),
+                ContractType::MeanBetween { min, max } => Box::new(MeanBetweenValidator {
+                    min: *min,
+                    max: *max,
+                }),
+                ContractType::StdevBetween { min, max } => Box::new(StdevBetweenValidator {
+                    min: *min,
+                    max: *max,
+                }),
+                ContractType::Completeness { min_ratio } => Box::new(CompletenessValidator {
+                    min_ratio: *min_ratio,
+                }),
+                ContractType::InSet { values } => Box::new(InSetValidator {
+                    values: values.iter().cloned().collect(),
+                }),
+                ContractType::NotInSet { values } => Box::new(NotInSetValidator {
+                    values: values.iter().cloned().collect(),
+                }),
+                ContractType::Type { dtype } => Box::new(TypeValidator {
+                    dtype: dtype.clone(),
+                }),
+                ContractType::OutlierSigma { sigma } => {
+                    Box::new(OutlierSigmaValidator { sigma: *sigma })
+                }
+                ContractType::DateFormat { format } => Box::new(DateFormatValidator {
+                    format: format.clone(),
+                }),
+                ContractType::Distinctness { min_ratio } => Box::new(DistinctnessValidator {
+                    min_ratio: *min_ratio,
+                }),
+                _ => continue,
+            };
+
+            let report = validator.validate(df, &col.name)?;
+            log_validation_event(
+                contract_name,
+                contract_version,
                 &col.name,
-                contract,
-                &contracts.contract.name,
-                &contracts.contract.name,
-            )?;
+                validator.name(),
+                report.status,
+                report.details.as_deref(),
+            );
         }
     }
 
-    // Compound uniqueness contracts
+    // --- Compound-Level Validation ---
     if let Some(compounds) = &contracts.compound_unique {
         for cu in compounds {
-            apply_compound_unique(
-                df,
-                &cu.columns,
-                &contracts.contract.name,
-                &contracts.contract.name,
-            )?;
+            let validator: Box<dyn CompoundValidator> = Box::new(CompoundUniqueValidator {
+                columns: cu.columns.clone(),
+            });
+            let report = validator.validate(df)?;
+            log_validation_event(
+                contract_name,
+                contract_version,
+                "compound",
+                validator.name(),
+                report.status,
+                report.details.as_deref(),
+            );
         }
     }
 

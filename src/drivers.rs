@@ -1,18 +1,21 @@
+// src/drivers.rs
+
 pub mod csv;
 pub mod parquet;
 
+use anyhow::{anyhow, Result};
 use polars::prelude::*;
-use std::path::Path;
 
-/// Trait that all drivers implement
-pub trait DataSource {
-    fn load(&self, path: &Path) -> PolarsResult<DataFrame>;
+/// Trait that all drivers implement to load data from an in-memory byte slice.
+pub trait Driver {
+    fn load(&self, data: &[u8]) -> Result<DataFrame>;
 }
 
-pub fn get_driver(path: &Path) -> Box<dyn DataSource> {
-    match path.extension().and_then(|s| s.to_str()) {
-        Some("csv") => Box::new(csv::CsvDriver),
-        Some("parquet") => Box::new(parquet::ParquetDriver),
-        _ => panic!("Unsupported file type: {:?}", path),
+/// Factory function to get the correct driver based on a file extension.
+pub fn get_driver(extension: &str) -> Result<Box<dyn Driver>> {
+    match extension {
+        "csv" => Ok(Box::new(csv::CsvDriver)),
+        "parquet" => Ok(Box::new(parquet::ParquetDriver)),
+        _ => Err(anyhow!("Unsupported file extension: {}", extension)),
     }
 }

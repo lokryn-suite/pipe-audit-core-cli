@@ -7,7 +7,7 @@ use std::io::{BufReader, Read, Write};
 use std::path::PathBuf;
 use tracing::info;
 use tracing_subscriber::fmt::time::UtcTime;
-use tracing_subscriber::{EnvFilter, fmt, prelude::*};
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use whoami;
 
 /// Ensure logs/ exists
