@@ -3,7 +3,6 @@
 use crate::contracts::{ContractType, SchemaContracts};
 use crate::error::ValidationResult;
 use crate::logging::log_validation_event;
-// Corrected, fully-qualified and explicit import paths
 use crate::validators::column::{
     BooleanValidator, CompletenessValidator, DateFormatValidator, DistinctnessValidator,
     InSetValidator, MaxLengthValidator, MeanBetweenValidator, NotInSetValidator, NotNullValidator,
@@ -15,9 +14,10 @@ use crate::validators::file::{FileCompletenessValidator, RowCountValidator};
 use crate::validators::{CompoundValidator, FileValidator, Validator};
 use polars::prelude::*;
 
-pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> ValidationResult<()> {
+pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> ValidationResult<bool> {
     let contract_name = &contracts.contract.name;
     let contract_version = &contracts.contract.version;
+    let mut has_failures = false;
 
     // --- File-Level Validation ---
     if let Some(file_contracts) = &contracts.file {
@@ -33,6 +33,11 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
                 _ => continue,
             };
             let report = validator.validate(df)?;
+            
+            if report.status == "fail" {
+                has_failures = true;
+            }
+            
             log_validation_event(
                 contract_name,
                 contract_version,
@@ -46,7 +51,6 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
 
     // --- Column-Level Validation ---
     for col in &contracts.columns {
-
         for contract_rule in &col.validation {
             let validator: Box<dyn Validator> = match contract_rule {
                 ContractType::NotNull => Box::new(NotNullValidator),
@@ -93,6 +97,11 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
             };
 
             let report = validator.validate(df, &col.name)?;
+            
+            if report.status == "fail" {
+                has_failures = true;
+            }
+            
             log_validation_event(
                 contract_name,
                 contract_version,
@@ -111,6 +120,11 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
                 columns: cu.columns.clone(),
             });
             let report = validator.validate(df)?;
+            
+            if report.status == "fail" {
+                has_failures = true;
+            }
+            
             log_validation_event(
                 contract_name,
                 contract_version,
@@ -122,5 +136,5 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
         }
     }
 
-    Ok(())
+    Ok(!has_failures) // Return true if no failures, false if any failures
 }

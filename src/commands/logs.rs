@@ -4,12 +4,12 @@ use std::path::PathBuf;
 
 pub async fn verify(date: Option<&str>) {
     let logs_dir = PathBuf::from("logs");
-    
+
     if !logs_dir.exists() {
         eprintln!("❌ logs/ directory not found");
         return;
     }
-    
+
     let target_date = match date {
         Some(d) => match NaiveDate::parse_from_str(d, "%Y-%m-%d") {
             Ok(date) => date.format("%Y-%m-%d").to_string(),
@@ -23,21 +23,21 @@ pub async fn verify(date: Option<&str>) {
             yesterday.format("%Y-%m-%d").to_string()
         }
     };
-    
+
     let log_filename = format!("audit-{}.jsonl", target_date);
     let log_path = logs_dir.join(&log_filename);
     let ledger_path = logs_dir.join("hash_ledger.txt");
-    
+
     if !log_path.exists() {
         eprintln!("❌ Log file for {} not found", target_date);
         return;
     }
-    
+
     if !ledger_path.exists() {
         eprintln!("❌ Hash ledger not found");
         return;
     }
-    
+
     let ledger_contents = match fs::read_to_string(&ledger_path) {
         Ok(contents) => contents,
         Err(_) => {
@@ -45,7 +45,7 @@ pub async fn verify(date: Option<&str>) {
             return;
         }
     };
-    
+
     if ledger_contents.contains(&log_filename) {
         println!("✅ Log file for {} is sealed and verified", target_date);
     } else {

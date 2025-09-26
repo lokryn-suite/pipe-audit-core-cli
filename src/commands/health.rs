@@ -3,7 +3,7 @@ use std::path::Path;
 
 pub async fn run() {
     let mut healthy = true;
-    
+
     // Check contracts directory
     if !Path::new("contracts").exists() {
         println!("❌ contracts/ directory not found");
@@ -11,15 +11,15 @@ pub async fn run() {
     } else {
         println!("✅ contracts/ directory exists");
     }
-    
-    // Check logs directory  
+
+    // Check logs directory
     if !Path::new("logs").exists() {
         println!("❌ logs/ directory not found");
         healthy = false;
     } else {
         println!("✅ logs/ directory exists");
     }
-    
+
     // Check profiles
     match load_profiles() {
         Ok(profiles) => {
@@ -34,7 +34,7 @@ pub async fn run() {
             healthy = false;
         }
     }
-    
+
     if healthy {
         println!("\n🎉 System healthy");
     } else {

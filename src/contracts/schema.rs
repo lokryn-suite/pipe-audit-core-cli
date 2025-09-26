@@ -18,6 +18,24 @@ pub struct Source {
     pub profile: Option<String>,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+pub struct Destination {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub location: Option<String>,
+    pub profile: Option<String>,
+    pub format: Option<String>, // New: override output format
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Quarantine {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub location: Option<String>,
+    pub profile: Option<String>,
+    pub format: Option<String>, // New: override output format
+}
+
 #[derive(Debug, Deserialize)]
 pub struct SchemaContracts {
     pub contract: Contract,
@@ -25,8 +43,8 @@ pub struct SchemaContracts {
     pub columns: Vec<ColumnContracts>,
     pub compound_unique: Option<Vec<CompoundUnique>>,
     pub source: Option<Source>,
-    pub destination: Option<Source>,
-    pub quarantine: Option<Source>,
+    pub destination: Option<Destination>, // Fixed: was Source
+    pub quarantine: Option<Quarantine>,   // Fixed: was Source
 }
 
 /// Load the TOML contract file that matches the data filename

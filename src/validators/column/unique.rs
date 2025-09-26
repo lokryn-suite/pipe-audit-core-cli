@@ -12,7 +12,7 @@ impl Validator for UniqueValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         let unique_count = series.n_unique()?;
         let total_count = series.len();
 

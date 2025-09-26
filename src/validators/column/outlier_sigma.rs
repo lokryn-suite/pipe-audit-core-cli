@@ -14,7 +14,7 @@ impl Validator for OutlierSigmaValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         let f64_series = match series.cast(&DataType::Float64) {
             Ok(s) => s,
             Err(_) => {

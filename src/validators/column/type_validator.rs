@@ -14,7 +14,7 @@ impl Validator for TypeValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         let actual_dtype = format!("{:?}", series.dtype());
 
         if actual_dtype == self.dtype {

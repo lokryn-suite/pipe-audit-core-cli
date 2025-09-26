@@ -13,7 +13,9 @@ categories = ["development-tools::testing", "database"]
 default = ["cli"]
 cli = ["dep:clap", "dep:tokio"]
 server = ["dep:axum", "dep:tower", "dep:tower-http", "dep:utoipa", "dep:utoipa-swagger-ui"]
-all = ["cli", "server"]
+file-management = []  # New feature for file movement
+cloud-platform = ["file-management"]  # Cloud includes file management
+all = ["cli", "server", "cloud-platform"]
 
 [dependencies]
 # Core Dependencies

@@ -14,7 +14,7 @@ impl Validator for MaxLengthValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         if let Ok(ca) = series.str() {
             // Correct method name is str_len_chars
             let lengths = ca.str_len_chars();

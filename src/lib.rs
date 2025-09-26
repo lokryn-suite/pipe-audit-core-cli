@@ -47,6 +47,7 @@ pub mod cli;
 #[doc(hidden)]
 pub mod commands;
 
+#[doc(hidden)]
 /// Internal engine
 pub mod engine;
 
@@ -58,6 +59,10 @@ pub mod logging; // Logging should remain public so the container can use it.
 pub use contracts::SchemaContracts;
 pub use error::{ValidationError, ValidationResult};
 pub use runner::validate_data;
+
+// ===== FEATURES ========
+#[cfg(feature = "file-management")]
+pub mod movement;
 
 // ===== VERSION INFO =====
 

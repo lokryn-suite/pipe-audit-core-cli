@@ -1,7 +1,7 @@
 // pipeaudit-core/src/main.rs
 
 use clap::Parser;
-use pipa::cli::{Cli, Commands, ContractCommands, ProfileCommands, LogsCommands};
+use pipa::cli::{Cli, Commands, ContractCommands, LogsCommands, ProfileCommands};
 use pipa::commands;
 use pipa::logging;
 
@@ -9,9 +9,9 @@ use pipa::logging;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
     logging::init_logging();
-    
+
     let cli = Cli::parse();
-    
+
     match cli.command {
         Some(Commands::Run { contract, all }) => {
             if all && contract.is_some() {
@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 eprintln!("❌ Must specify either contract name or --all");
                 std::process::exit(1);
             }
-            
+
             if all {
                 commands::run::run_all().await;
             } else if let Some(name) = contract {
@@ -46,6 +46,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("No command specified. Use --help for usage information.");
         }
     }
-    
+
     Ok(())
 }

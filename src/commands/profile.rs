@@ -1,4 +1,4 @@
-use crate::profiles::{load_profiles, Profile};
+use crate::profiles::{load_profiles, Profile, Profiles};
 use aws_sdk_s3::config::Credentials;
 
 pub async fn list() {
@@ -26,41 +26,39 @@ pub async fn test(profile_name: &str) {
         }
     };
 
-    let profile = match profiles.get(profile_name) {
-        Some(profile) => profile,
-        None => {
-            eprintln!("❌ Profile '{}' not found", profile_name);
-            return;
-        }
-    };
-
-    match profile.provider.as_str() {
-        "s3" => test_s3_profile(profile_name, profile).await,
-        "azure" => {
-            println!("⚠️ Azure profile testing not yet implemented");
-        }
-        "gcs" => {
-            println!("⚠️ GCS profile testing not yet implemented");
-        }
-        "local" => test_local_profile(profile_name, profile).await,
-        "sftp" => {
-            println!("⚠️ SFTP profile testing not yet implemented");
-        }
-        _ => {
-            eprintln!("❌ Unsupported provider '{}'", profile.provider);
-        }
+    if test_profile_internal(profile_name, &profiles).await {
+        println!("✅ Profile '{}' connectivity verified", profile_name);
+    } else {
+        eprintln!(
+            "❌ Profile '{}' test failed. Check logs for details.",
+            profile_name
+        );
     }
 }
 
-async fn test_s3_profile(profile_name: &str, profile: &Profile) {
-    // Your existing S3 test logic here
+// Extracted for reuse in file movement
+pub async fn test_profile_internal(profile_name: &str, profiles: &Profiles) -> bool {
+    if let Some(profile) = profiles.get(profile_name) {
+        match profile.provider.as_str() {
+            "s3" => test_s3_profile_internal(profile).await,
+            "local" => true,  // Local always works if profile exists
+            "azure" => false, // Not implemented yet
+            "gcs" => false,   // Not implemented yet
+            "sftp" => false,  // Not implemented yet
+            _ => false,
+        }
+    } else {
+        false
+    }
+}
+
+async fn test_s3_profile_internal(profile: &Profile) -> bool {
     let region = profile
         .region
         .clone()
         .unwrap_or_else(|| "us-east-1".to_string());
-    let mut cfg_loader =
-        aws_config::defaults(aws_config::BehaviorVersion::latest())
-            .region(aws_config::Region::new(region));
+    let mut cfg_loader = aws_config::defaults(aws_config::BehaviorVersion::latest())
+        .region(aws_config::Region::new(region));
 
     if let Some(endpoint) = &profile.endpoint {
         cfg_loader = cfg_loader.endpoint_url(endpoint);
@@ -85,18 +83,5 @@ async fn test_s3_profile(profile_name: &str, profile: &Profile) {
     }
 
     let client = aws_sdk_s3::Client::from_conf(s3b.build());
-
-    match client.list_buckets().send().await {
-        Ok(_) => println!("✅ Profile '{}' connectivity verified", profile_name),
-        Err(_) => eprintln!("❌ Profile '{}' test failed. Check logs for details.", profile_name),
-    }
-}
-
-async fn test_local_profile(profile_name: &str, _profile: &Profile) {
-    // For local profiles, just verify we can read the file system
-    if std::path::Path::new(".").exists() {
-        println!("✅ Profile '{}' (local) accessible", profile_name);
-    } else {
-        eprintln!("❌ Profile '{}' (local) test failed", profile_name);
-    }
+    client.list_buckets().send().await.is_ok()
 }

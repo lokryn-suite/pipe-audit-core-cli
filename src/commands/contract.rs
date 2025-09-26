@@ -4,7 +4,7 @@ use std::fs;
 
 pub async fn list() {
     println!("Available contracts:");
-    
+
     match glob("contracts/*.toml") {
         Ok(entries) => {
             let mut found_any = false;
@@ -40,19 +40,17 @@ pub async fn validate(file: &str) {
     };
 
     match fs::read_to_string(&path) {
-        Ok(content) => {
-            match toml::from_str::<SchemaContracts>(&content) {
-                Ok(_) => println!("✅ {} is a valid contract", file),
-                Err(_) => eprintln!("❌ Invalid contract syntax. Check logs for details."),
-            }
-        }
+        Ok(content) => match toml::from_str::<SchemaContracts>(&content) {
+            Ok(_) => println!("✅ {} is a valid contract", file),
+            Err(_) => eprintln!("❌ Invalid contract syntax. Check logs for details."),
+        },
         Err(_) => eprintln!("❌ Contract file not found: {}", file),
     }
 }
 
 pub async fn show(name: &str) {
     let path = format!("contracts/{}.toml", name);
-    
+
     match fs::read_to_string(&path) {
         Ok(content) => {
             println!("Contract: {}\n", name);

@@ -15,7 +15,7 @@ impl Validator for PatternValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         let re = Regex::new(&self.pattern)?;
 
         if let Ok(utf8_chunked) = series.str() {

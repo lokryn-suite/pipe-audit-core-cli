@@ -56,6 +56,28 @@ impl S3Connector {
         Ok(S3Connector { client, bucket })
     }
 
+    pub async fn put_object_from_url(
+        &self,
+        s3_url: &str,
+        data: &[u8],
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let url = url::Url::parse(s3_url)?;
+        let bucket = url.host_str().ok_or("Invalid S3 URL: missing bucket")?;
+        let key = url.path().trim_start_matches('/');
+
+        use aws_sdk_s3::primitives::ByteStream;
+
+        self.client
+            .put_object()
+            .bucket(bucket)
+            .key(key)
+            .body(ByteStream::from(data.to_vec()))
+            .send()
+            .await?;
+
+        Ok(())
+    }
+
     fn parse_s3_path(&self, path: &str) -> Result<String> {
         if path.starts_with("s3://") {
             let url = url::Url::parse(path)?;

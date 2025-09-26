@@ -15,7 +15,7 @@ impl Validator for RangeValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         if let Ok(values) = series.i64() {
             // Create a boolean mask for values outside the desired range.
             let mask = values.lt(self.min) | values.gt(self.max);

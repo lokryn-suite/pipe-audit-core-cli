@@ -14,7 +14,7 @@ impl Validator for DistinctnessValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         let total_count = series.len();
         if total_count == 0 {
             return Ok(ValidationReport {

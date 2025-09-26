@@ -22,7 +22,7 @@ impl Validator for BooleanValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         if let Ok(utf8_chunked) = series.str() {
             let bad_count = utf8_chunked
                 .into_iter()

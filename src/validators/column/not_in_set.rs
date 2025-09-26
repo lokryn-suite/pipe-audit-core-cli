@@ -15,7 +15,7 @@ impl Validator for NotInSetValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         if !series.dtype().is_string() {
             return Ok(ValidationReport {
                 status: "skipped",
@@ -24,17 +24,18 @@ impl Validator for NotInSetValidator {
         }
 
         let disallowed_values: Vec<String> = self.values.iter().cloned().collect();
-        
+
         // Use the working lazy DataFrame pattern
         // For NotInSet, we want to find values that ARE in the disallowed set (no .not())
         let result = df
             .clone()
             .lazy()
-            .select([
-                col(column_name).is_in(lit(Series::new("disallowed".into(), disallowed_values)).implode(), false)
-            ])
+            .select([col(column_name).is_in(
+                lit(Series::new("disallowed".into(), disallowed_values)).implode(),
+                false,
+            )])
             .collect()?;
-        
+
         let bad_series = result.column(column_name)?;
         let bad_count: u32 = bad_series.bool()?.sum().unwrap_or(0);
 

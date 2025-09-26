@@ -32,8 +32,9 @@ location = "s3://raw/ondoriya/seed_data/people.csv"
 profile = "minio_raw"
 
 [destination]
-type = "not_moved"
+type = "local"
+location = "data/"
 
-
-[quarentine]
-type = "not_moved"
+[quarantine]
+type = "local"
+location = "quarantine/"

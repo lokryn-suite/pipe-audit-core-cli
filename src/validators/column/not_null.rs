@@ -10,7 +10,7 @@ impl Validator for NotNullValidator {
 
     fn validate(&self, df: &DataFrame, column_name: &str) -> ValidationResult<ValidationReport> {
         let series = df.column(column_name)?;
-        
+
         let null_count = series.null_count();
 
         if null_count > 0 {
