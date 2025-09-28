@@ -22,7 +22,7 @@ pub mod s3;
 pub mod sftp;
 
 pub use azure::AzureConnector;
-pub use gcs::GcsConnector;
+pub use gcs::GCSConnector;
 pub use local::LocalConnector;
 pub use s3::S3Connector;
 pub use sftp::SftpConnector;

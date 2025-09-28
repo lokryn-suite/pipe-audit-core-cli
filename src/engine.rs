@@ -33,11 +33,11 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
                 _ => continue,
             };
             let report = validator.validate(df)?;
-            
+
             if report.status == "fail" {
                 has_failures = true;
             }
-            
+
             log_validation_event(
                 contract_name,
                 contract_version,
@@ -97,11 +97,11 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
             };
 
             let report = validator.validate(df, &col.name)?;
-            
+
             if report.status == "fail" {
                 has_failures = true;
             }
-            
+
             log_validation_event(
                 contract_name,
                 contract_version,
@@ -120,11 +120,11 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
                 columns: cu.columns.clone(),
             });
             let report = validator.validate(df)?;
-            
+
             if report.status == "fail" {
                 has_failures = true;
             }
-            
+
             log_validation_event(
                 contract_name,
                 contract_version,

@@ -1,4 +1,5 @@
-use crate::connectors::{Connector, S3Connector};
+use crate::connectors::AzureConnector;
+use crate::connectors::{Connector, S3Connector, GCSConnector};
 use crate::contracts::load_contract_for_file;
 use crate::profiles::load_profiles;
 use crate::runner;
@@ -105,20 +106,62 @@ async fn validate_with_contract(
             buffer
         }
         "azure" => {
+            let profile_name = source
+                .profile
+                .as_ref()
+                .ok_or("Azure source requires profile")?;
+            let profile = profiles
+                .get(profile_name)
+                .ok_or_else(|| format!("Profile '{}' not found", profile_name))?;
             let location = source
                 .location
                 .as_ref()
                 .ok_or("Azure source missing location")?;
-            println!("☁️ Azure fetch not yet implemented for {}", location);
-            return Err("Azure connector not implemented".into());
+
+            println!("☁️ Fetching {} via profile {}", location, profile_name);
+
+            let url = url::Url::parse(location)?;
+            println!("Debug: Parsed URL: {:?}", url);
+
+            let connector = AzureConnector::from_profile_and_url(profile, &url).await?;
+            println!("Debug: Azure connector created successfully");
+
+            let mut reader = match connector.fetch(location).await {
+                Ok(reader) => {
+                    println!("Debug: Fetch successful");
+                    reader
+                }
+                Err(e) => {
+                    println!("Debug: Fetch failed: {:?}", e);
+                    return Err(e.into());
+                }
+            };
+
+            let mut buffer = Vec::new();
+            std::io::Read::read_to_end(&mut reader, &mut buffer)?;
+            println!("Debug: Read {} bytes from Azure", buffer.len());
+            buffer
         }
         "gcs" => {
+            let profile_name = source
+                .profile
+                .as_ref()
+                .ok_or("GCS source requires profile")?;
+            let profile = profiles
+                .get(profile_name)
+                .ok_or_else(|| format!("Profile '{}' not found", profile_name))?;
             let location = source
                 .location
                 .as_ref()
                 .ok_or("GCS source missing location")?;
-            println!("☁️ GCS fetch not yet implemented for {}", location);
-            return Err("GCS connector not implemented".into());
+
+            println!("🔎 Fetching {} via profile {}", location, profile_name);
+            let url = url::Url::parse(location)?;
+            let connector = GCSConnector::from_profile_and_url(profile, &url).await?;
+            let mut reader = connector.fetch(location).await?;
+            let mut buffer = Vec::new();
+            std::io::Read::read_to_end(&mut reader, &mut buffer)?;
+            buffer
         }
         "sftp" => {
             let location = source

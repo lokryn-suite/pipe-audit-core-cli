@@ -33,18 +33,20 @@ impl S3Connector {
         }
 
         let base_config = config_loader.load().await;
+        let mut s3_config = aws_sdk_s3::config::Builder::from(&base_config);
 
         // Build S3 config with optional path-style
-        let mut s3_config = aws_sdk_s3::config::Builder::from(&base_config);
-        if !profile.access_key.is_empty() && !profile.secret_key.is_empty() {
-            let creds = Credentials::new(
-                profile.access_key.clone(),
-                profile.secret_key.clone(),
-                None,
-                None,
-                "profile",
-            );
-            s3_config = s3_config.credentials_provider(creds);
+        if let (Some(access_key), Some(secret_key)) = (&profile.access_key, &profile.secret_key) {
+            if !access_key.is_empty() && !secret_key.is_empty() {
+                let creds = Credentials::new(
+                    access_key.clone(),
+                    secret_key.clone(),
+                    None,
+                    None,
+                    "profile",
+                );
+                s3_config = s3_config.credentials_provider(creds);
+            }
         }
 
         if profile.path_style.unwrap_or(false) {

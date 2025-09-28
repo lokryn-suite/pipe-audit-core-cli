@@ -167,6 +167,21 @@ impl FileMovement {
                 println!("📤 Wrote {} bytes to {}", data.len(), location);
                 Ok(())
             }
+
+            "azure" => {
+                let profile_name = config.profile.as_ref().unwrap();
+                let profile = profiles
+                    .get(profile_name)
+                    .ok_or_else(|| format!("Profile '{}' not found", profile_name))?;
+                let location = config.location.as_ref().unwrap();
+
+                let url = url::Url::parse(location)?;
+                let connector = AzureConnector::from_profile_and_url(profile, &url).await?;
+                connector.put_object_from_url(location, data).await?;
+
+                println!("☁️ Wrote {} bytes to {}", data.len(), location);
+                Ok(())
+            }
             "not_moved" => {
                 println!("📄 Marked as not_moved, skipping write");
                 Ok(())

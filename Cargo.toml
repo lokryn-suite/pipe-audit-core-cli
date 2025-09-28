@@ -12,10 +12,9 @@ categories = ["development-tools::testing", "database"]
 [features]
 default = ["cli"]
 cli = ["dep:clap", "dep:tokio"]
-server = ["dep:axum", "dep:tower", "dep:tower-http", "dep:utoipa", "dep:utoipa-swagger-ui"]
 file-management = []  # New feature for file movement
 cloud-platform = ["file-management"]  # Cloud includes file management
-all = ["cli", "server", "cloud-platform"]
+all = ["cli","cloud-platform"]
 
 [dependencies]
 # Core Dependencies
@@ -49,19 +48,18 @@ once_cell = "1.19"
 # Storage Connectors
 aws-config = "1.1.7"
 aws-sdk-s3 = "1.17.0"
+hmac = "0.12"
+base64 = "0.22"
+futures = "0.3"
+reqwest = { version = "0.12", features = ["json"] }
+jsonwebtoken = "9.3.1"
 
 async-trait = "0.1.74"
 
 # Cli Dependencies
 clap = { version = "4.5.48", features = ["derive"], optional= true }
 tokio = { version = "1.47.1", features = ["full"], optional = true }
-
-# Server Dependencies
-axum = { version = "0.7", optional = true }
-tower = { version = "0.4", optional = true }
-tower-http = { version = "0.5", features = ["cors", "trace"], optional = true }
-utoipa = { version = "4", features = ["axum_extras"], optional = true }
-utoipa-swagger-ui = { version = "6", features = ["axum"], optional = true }
+urlencoding = "2.1.3"
 
 
 [dev-dependencies]

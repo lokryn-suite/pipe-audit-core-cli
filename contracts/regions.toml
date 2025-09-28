@@ -100,5 +100,6 @@ validation = [
 ]
 
 [source]
-type = "local"
-location = "data/regions.csv"
+type = "gcs"
+location = "https://storage.cloud.google.com/ondoriya/regions.csv"
+profile = "gcs_test"
