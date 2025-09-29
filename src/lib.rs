@@ -21,7 +21,7 @@ pub mod error;
 /// Connection profiles
 pub mod profiles;
 
-/// Core validation runner
+/// Core validation runner (being refactored to core/)
 pub mod runner;
 
 // ===== EXTENSIBLE INTERFACES =====
@@ -34,10 +34,14 @@ pub mod connectors;
 #[doc = "Interface for file format drivers (API may change before 1.0)"]
 pub mod drivers;
 
-// ===== INTERNAL MODULES =====
-// These are used by the CLI binary within this crate.
+// ===== CORE BUSINESS LOGIC =====
+/// Shared business logic used by both CLI and API
+pub mod core;
 
-// src/lib.rs
+/// Storage and auth abstractions
+pub mod traits;
+
+// ===== INTERNAL MODULES =====
 
 /// CLI interface - not part of stable API, may change
 #[doc(hidden)]
@@ -52,7 +56,11 @@ pub mod commands;
 pub mod engine;
 
 /// Logging setup
-pub mod logging; // Logging should remain public so the container can use it.
+pub mod logging;
+
+// ===== API SERVER (feature gated) =====
+#[cfg(feature = "api-server")]
+pub mod api;
 
 // ===== PRIMARY EXPORTS =====
 

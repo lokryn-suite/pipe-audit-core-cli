@@ -1,8 +1,6 @@
-// src/engine.rs
-
 use crate::contracts::{ContractType, SchemaContracts};
 use crate::error::ValidationResult;
-use crate::logging::log_validation_event;
+use crate::logging::schema::RuleResult;
 use crate::validators::column::{
     BooleanValidator, CompletenessValidator, DateFormatValidator, DistinctnessValidator,
     InSetValidator, MaxLengthValidator, MeanBetweenValidator, NotInSetValidator, NotNullValidator,
@@ -14,10 +12,11 @@ use crate::validators::file::{FileCompletenessValidator, RowCountValidator};
 use crate::validators::{CompoundValidator, FileValidator, Validator};
 use polars::prelude::*;
 
-pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> ValidationResult<bool> {
-    let contract_name = &contracts.contract.name;
-    let contract_version = &contracts.contract.version;
-    let mut has_failures = false;
+pub fn validate_dataframe(
+    df: &DataFrame,
+    contracts: &SchemaContracts,
+) -> ValidationResult<Vec<RuleResult>> {
+    let mut results: Vec<RuleResult> = Vec::new();
 
     // --- File-Level Validation ---
     if let Some(file_contracts) = &contracts.file {
@@ -33,19 +32,12 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
                 _ => continue,
             };
             let report = validator.validate(df)?;
-
-            if report.status == "fail" {
-                has_failures = true;
-            }
-
-            log_validation_event(
-                contract_name,
-                contract_version,
-                "file",
-                validator.name(),
-                report.status,
-                report.details.as_deref(),
-            );
+            results.push(RuleResult {
+                column: "file".to_string(),
+                rule: validator.name().to_string(),
+                result: report.status.to_string(),
+                details: report.details.clone(),
+            });
         }
     }
 
@@ -97,19 +89,12 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
             };
 
             let report = validator.validate(df, &col.name)?;
-
-            if report.status == "fail" {
-                has_failures = true;
-            }
-
-            log_validation_event(
-                contract_name,
-                contract_version,
-                &col.name,
-                validator.name(),
-                report.status,
-                report.details.as_deref(),
-            );
+            results.push(RuleResult {
+                column: col.name.clone(),
+                rule: validator.name().to_string(),
+                result: report.status.to_string(),
+                details: report.details.clone(),
+            });
         }
     }
 
@@ -120,21 +105,14 @@ pub fn validate_dataframe(df: &DataFrame, contracts: &SchemaContracts) -> Valida
                 columns: cu.columns.clone(),
             });
             let report = validator.validate(df)?;
-
-            if report.status == "fail" {
-                has_failures = true;
-            }
-
-            log_validation_event(
-                contract_name,
-                contract_version,
-                "compound",
-                validator.name(),
-                report.status,
-                report.details.as_deref(),
-            );
+            results.push(RuleResult {
+                column: "compound".to_string(),
+                rule: validator.name().to_string(),
+                result: report.status.to_string(),
+                details: report.details.clone(),
+            });
         }
     }
 
-    Ok(!has_failures) // Return true if no failures, false if any failures
+    Ok(results)
 }

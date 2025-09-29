@@ -21,8 +21,7 @@ impl GCSConnector {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("GCS profile missing service_account_json"))?;
 
-        let (client_email, private_key) =
-            Self::parse_service_account(service_account_json)?;
+        let (client_email, private_key) = Self::parse_service_account(service_account_json)?;
 
         Ok(GCSConnector {
             client_email,

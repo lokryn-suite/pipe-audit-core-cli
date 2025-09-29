@@ -26,8 +26,11 @@ pub enum ValidationError {
     #[error("Regex pattern error: {0}")]
     Regex(#[from] regex::Error),
 
-    #[error("Validation failed: {0}")]
+    #[error("Internal Error: {0}")]
     Anyhow(#[from] anyhow::Error),
+    
+    #[error("File size {size} exceeds maximum {max} bytes")]
+    FileTooLarge { size: usize, max: usize },
 
     #[error("{0}")]
     Other(String),

@@ -74,5 +74,9 @@ pub enum LogsCommands {
         /// Date to verify (YYYY-MM-DD format)
         #[arg(long)]
         date: Option<String>,
+
+        /// Verify all sealed logs
+        #[arg(long)]
+        all: bool,
     },
 }

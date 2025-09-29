@@ -40,7 +40,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         Some(Commands::Health) => commands::health::run().await,
         Some(Commands::Logs { logs_command }) => match logs_command {
-            LogsCommands::Verify { date } => commands::logs::verify(date.as_deref()).await,
+            LogsCommands::Verify { date, all } => {
+                commands::logs::verify(date.as_deref(), all).await;
+            }
         },
         None => {
             println!("No command specified. Use --help for usage information.");

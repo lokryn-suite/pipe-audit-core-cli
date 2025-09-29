@@ -1,54 +1,80 @@
-use chrono::{NaiveDate, Utc};
-use std::fs;
-use std::path::PathBuf;
+use crate::logging::schema::{AuditLogEntry, Executor, Target};
+use crate::logging::verify::{verify_all, verify_date, FileStatus};
+use crate::logging::writer::log_and_print;
+use chrono::Utc;
+use hostname;
+use whoami;
 
-pub async fn verify(date: Option<&str>) {
-    let logs_dir = PathBuf::from("logs");
+fn executor() -> Executor {
+    let hostname = hostname::get()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
 
-    if !logs_dir.exists() {
-        eprintln!("❌ logs/ directory not found");
-        return;
+    Executor {
+        user: whoami::username(),
+        host: hostname,
     }
+}
 
-    let target_date = match date {
-        Some(d) => match NaiveDate::parse_from_str(d, "%Y-%m-%d") {
-            Ok(date) => date.format("%Y-%m-%d").to_string(),
-            Err(_) => {
-                eprintln!("❌ Invalid date format. Use YYYY-MM-DD");
-                return;
-            }
-        },
-        None => {
-            let yesterday = Utc::now().date_naive() - chrono::Duration::days(1);
-            yesterday.format("%Y-%m-%d").to_string()
-        }
+pub async fn verify(date: Option<&str>, all: bool) {
+    let summary = if all { verify_all() } else { verify_date(date) };
+
+    // Overall summary entry
+    let entry = AuditLogEntry {
+        timestamp: Utc::now().to_rfc3339(),
+        level: "AUDIT",
+        event: "ledger_verification_summary",
+        contract: None,
+        target: None,
+        results: None,
+        executor: executor(),
+        details: Some(&format!(
+            "verified={}, mismatched={}, missing={}, malformed={}, unsealed={}",
+            summary.verified,
+            summary.mismatched,
+            summary.missing,
+            summary.malformed,
+            summary.unsealed
+        )),
+        summary: None,
     };
+    log_and_print(
+        &entry,
+        &format!(
+            "📊 Verification summary:\n   ✅ Verified:   {}\n   ❌ Mismatched: {}\n   ❓ Missing:    {}\n   ⚠️  Malformed:  {}\n   🕒 Unsealed:   {}",
+            summary.verified, summary.mismatched, summary.missing, summary.malformed, summary.unsealed
+        ),
+    );
 
-    let log_filename = format!("audit-{}.jsonl", target_date);
-    let log_path = logs_dir.join(&log_filename);
-    let ledger_path = logs_dir.join("hash_ledger.txt");
+    // Per‑file entries
+    for file in summary.files {
+        let (symbol, status_str) = match file.status {
+            FileStatus::Verified => ("✅", "verified"),
+            FileStatus::Mismatched => ("❌", "mismatched"),
+            FileStatus::Missing => ("❓", "missing"),
+            FileStatus::Malformed => ("⚠️", "malformed"),
+            FileStatus::Unsealed => ("🕒", "unsealed"),
+        };
 
-    if !log_path.exists() {
-        eprintln!("❌ Log file for {} not found", target_date);
-        return;
-    }
-
-    if !ledger_path.exists() {
-        eprintln!("❌ Hash ledger not found");
-        return;
-    }
-
-    let ledger_contents = match fs::read_to_string(&ledger_path) {
-        Ok(contents) => contents,
-        Err(_) => {
-            eprintln!("❌ Failed to read hash ledger. Check logs for details.");
-            return;
-        }
-    };
-
-    if ledger_contents.contains(&log_filename) {
-        println!("✅ Log file for {} is sealed and verified", target_date);
-    } else {
-        println!("⚠️  Log file for {} not yet sealed", target_date);
+        let entry = AuditLogEntry {
+            timestamp: Utc::now().to_rfc3339(),
+            level: "AUDIT",
+            event: "ledger_file_status",
+            contract: None,
+            target: Some(Target {
+                file: &file.filename,
+                column: None,
+                rule: None,
+            }),
+            results: None,
+            executor: executor(),
+            details: Some(&format!("status={}", status_str)),
+            summary: None,
+        };
+        log_and_print(
+            &entry,
+            &format!("{} {} {}", symbol, file.filename, status_str),
+        );
     }
 }

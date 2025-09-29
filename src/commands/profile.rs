@@ -1,19 +1,60 @@
+use crate::logging::schema::{AuditLogEntry, Executor};
+use crate::logging::writer::log_and_print;
 use crate::profiles::{load_profiles, Profile, Profiles};
 use aws_sdk_s3::config::Credentials;
+use chrono::Utc;
+use hostname;
+use whoami;
+
+fn executor() -> Executor {
+    let hostname = hostname::get()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
+
+    Executor {
+        user: whoami::username(),
+        host: hostname,
+    }
+}
 
 pub async fn list() {
     match load_profiles() {
         Ok(profiles) => {
             if profiles.is_empty() {
-                println!("No profiles configured");
+                let entry = AuditLogEntry {
+                    timestamp: Utc::now().to_rfc3339(),
+                    level: "AUDIT",
+                    event: "profile_listed",
+                    contract: None,
+                    target: None,
+                    results: None,
+                    executor: executor(),
+                    details: Some("no profiles configured"),
+                    summary: None,
+                };
+                log_and_print(&entry, "👤 No profiles configured");
             } else {
-                println!("Available profiles:");
+                let entry = AuditLogEntry {
+                    timestamp: Utc::now().to_rfc3339(),
+                    level: "AUDIT",
+                    event: "profile_listed",
+                    contract: None,
+                    target: None,
+                    results: None,
+                    executor: executor(),
+                    details: Some(&format!("{} profiles found", profiles.len())),
+                    summary: None,
+                };
+                log_and_print(&entry, "👤 Available profiles:");
                 for (name, profile) in profiles.iter() {
                     println!("  - {} ({})", name, profile.provider);
                 }
             }
         }
-        Err(_) => eprintln!("❌ Failed to load profiles. Check logs for details."),
+        Err(_) => {
+            eprintln!("❌ Failed to load profiles. Check logs for details.");
+        }
     }
 }
 
@@ -26,12 +67,28 @@ pub async fn test(profile_name: &str) {
         }
     };
 
-    if test_profile_internal(profile_name, &profiles).await {
-        println!("✅ Profile '{}' connectivity verified", profile_name);
+    let ok = test_profile_internal(profile_name, &profiles).await;
+    let entry = AuditLogEntry {
+        timestamp: Utc::now().to_rfc3339(),
+        level: "AUDIT",
+        event: "profile_tested",
+        contract: None,
+        target: None,
+        results: None,
+        executor: executor(),
+        details: Some(&format!("profile={}, result={}", profile_name, ok)),
+        summary: None,
+    };
+
+    if ok {
+        log_and_print(
+            &entry,
+            &format!("✅ Profile '{}' connectivity verified", profile_name),
+        );
     } else {
-        eprintln!(
-            "❌ Profile '{}' test failed. Check logs for details.",
-            profile_name
+        log_and_print(
+            &entry,
+            &format!("❌ Profile '{}' test failed", profile_name),
         );
     }
 }
@@ -90,11 +147,9 @@ async fn test_s3_profile_internal(profile: &Profile) -> bool {
 }
 
 async fn test_azure_profile_internal(profile: &Profile) -> bool {
-    // For now, only support connection string method
     if let Some(connection_string) = &profile.connection_string {
         return test_azure_connection_string(connection_string).await;
     }
-
     false
 }
 
@@ -114,13 +169,11 @@ async fn test_azure_connection_string(connection_string: &str) -> bool {
         .format("%a, %d %b %Y %H:%M:%S GMT")
         .to_string();
 
-    // Create the string to sign for Azure Storage authentication
     let string_to_sign = format!(
         "GET\n\n\n\n\n\n\n\n\n\n\n\nx-ms-date:{}\nx-ms-version:2020-04-08\n/{}/\ncomp:list",
         date, account_name
     );
 
-    // Create HMAC signature
     let key_bytes = match general_purpose::STANDARD.decode(&account_key) {
         Ok(bytes) => bytes,
         Err(_) => return false,
@@ -143,14 +196,8 @@ async fn test_azure_connection_string(connection_string: &str) -> bool {
         .send()
         .await
     {
-        Ok(response) => {
-            println!("Debug: Azure auth test response: {}", response.status());
-            response.status().is_success()
-        }
-        Err(e) => {
-            println!("Debug: Azure connection failed: {}", e);
-            false
-        }
+        Ok(response) => response.status().is_success(),
+        Err(_) => false,
     }
 }
 
@@ -207,27 +254,15 @@ fn parse_gcs_service_account(
 }
 
 async fn test_gcs_service_account(service_account_json: &str) -> bool {
-    println!(
-        "Debug: GCS service account JSON length: {}",
-        service_account_json.len()
-    );
-    println!(
-        "Debug: GCS service account JSON first 100 chars: {}",
-        &service_account_json.chars().take(100).collect::<String>()
-    );
     use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
     use serde_json::json;
 
     let (project_id, client_email, private_key) =
         match parse_gcs_service_account(service_account_json) {
             Ok((pid, email, key)) => (pid, email, key),
-            Err(e) => {
-                println!("Debug: GCS service account parsing failed: {}", e);
-                return false;
-            }
+            Err(_) => return false,
         };
 
-    // Create JWT claims
     let now = chrono::Utc::now().timestamp();
     let claims = json!({
         "iss": client_email,
@@ -241,25 +276,20 @@ async fn test_gcs_service_account(service_account_json: &str) -> bool {
     let header = Header::new(Algorithm::RS256);
     let encoding_key = match EncodingKey::from_rsa_pem(private_key.as_bytes()) {
         Ok(key) => key,
-        Err(e) => {
-            println!("Debug: GCS private key parsing failed: {}", e);
+        Err(_) => {
             return false;
         }
     };
 
     let jwt_token = match encode(&header, &claims, &encoding_key) {
         Ok(token) => token,
-        Err(e) => {
-            println!("Debug: GCS JWT generation failed: {}", e);
+        Err(_) => {
             return false;
         }
     };
 
-    println!("Debug: GCS JWT generated successfully");
-
     // Exchange JWT for access token
     let client = reqwest::Client::new();
-
     let token_response = match client
         .post("https://oauth2.googleapis.com/token")
         .header("Content-Type", "application/x-www-form-urlencoded")
@@ -271,30 +301,21 @@ async fn test_gcs_service_account(service_account_json: &str) -> bool {
         .await
     {
         Ok(response) => response,
-        Err(e) => {
-            println!("Debug: GCS token exchange request failed: {}", e);
+        Err(_) => {
             return false;
         }
     };
 
     if !token_response.status().is_success() {
-        println!(
-            "Debug: GCS token exchange failed: {}",
-            token_response.status()
-        );
         return false;
     }
 
     let access_token = match token_response.json::<serde_json::Value>().await {
         Ok(json) => match json["access_token"].as_str() {
             Some(token) => token.to_string(),
-            None => {
-                println!("Debug: GCS access_token not found in response");
-                return false;
-            }
+            None => return false,
         },
-        Err(e) => {
-            println!("Debug: GCS token response parsing failed: {}", e);
+        Err(_) => {
             return false;
         }
     };
@@ -311,13 +332,7 @@ async fn test_gcs_service_account(service_account_json: &str) -> bool {
         .send()
         .await
     {
-        Ok(response) => {
-            println!("Debug: GCS bucket list response: {}", response.status());
-            response.status().is_success()
-        }
-        Err(e) => {
-            println!("Debug: GCS bucket list failed: {}", e);
-            false
-        }
+        Ok(response) => response.status().is_success(),
+        Err(_) => false,
     }
 }
