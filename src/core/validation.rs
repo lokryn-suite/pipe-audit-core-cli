@@ -14,7 +14,6 @@ pub async fn execute_validation(
     contracts: &SchemaContracts,
     executor: &Executor,
 ) -> ValidationResult<Vec<RuleResult>> {
-    
     log_event(&AuditLogEntry {
         timestamp: Utc::now().to_rfc3339(),
         level: "AUDIT",
@@ -30,9 +29,9 @@ pub async fn execute_validation(
         summary: None,
     });
 
-    let driver = get_driver(extension)
-        .context("Failed to find a suitable driver for the extension")?;
-    
+    let driver =
+        get_driver(extension).context("Failed to find a suitable driver for the extension")?;
+
     log_event(&AuditLogEntry {
         timestamp: Utc::now().to_rfc3339(),
         level: "AUDIT",
@@ -45,8 +44,10 @@ pub async fn execute_validation(
         summary: None,
     });
 
-    let df = driver.load(data).context("Failed to parse data from memory")?;
-    
+    let df = driver
+        .load(data)
+        .context("Failed to parse data from memory")?;
+
     log_event(&AuditLogEntry {
         timestamp: Utc::now().to_rfc3339(),
         level: "AUDIT",

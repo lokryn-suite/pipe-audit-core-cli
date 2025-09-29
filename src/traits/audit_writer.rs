@@ -1,8 +1,8 @@
 //! Audit log writer abstraction
 
-use async_trait::async_trait;
-use crate::logging::schema::AuditLogEntry;
 use crate::error::ValidationResult;
+use crate::logging::schema::AuditLogEntry;
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait AuditWriter: Send + Sync {

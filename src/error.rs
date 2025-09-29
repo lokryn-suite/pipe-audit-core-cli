@@ -1,4 +1,4 @@
-// src/error.rs (create if doesn't exist)
+// src/error.rs
 use polars::prelude::PolarsError;
 use thiserror::Error;
 
@@ -28,7 +28,7 @@ pub enum ValidationError {
 
     #[error("Internal Error: {0}")]
     Anyhow(#[from] anyhow::Error),
-    
+
     #[error("File size {size} exceeds maximum {max} bytes")]
     FileTooLarge { size: usize, max: usize },
 
@@ -38,3 +38,10 @@ pub enum ValidationError {
 
 /// Result type for validation operations
 pub type ValidationResult<T> = Result<T, ValidationError>;
+
+// Add this at the end:
+impl From<Box<dyn std::error::Error>> for ValidationError {
+    fn from(err: Box<dyn std::error::Error>) -> Self {
+        ValidationError::Other(err.to_string())
+    }
+}

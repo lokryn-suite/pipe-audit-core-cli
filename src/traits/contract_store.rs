@@ -1,8 +1,8 @@
 //! Contract storage abstraction
 
-use async_trait::async_trait;
 use crate::contracts::SchemaContracts;
 use crate::error::ValidationResult;
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait ContractStore: Send + Sync {

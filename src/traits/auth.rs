@@ -1,8 +1,8 @@
 //! Authentication context trait
 //! Stub implementation for Docker, real implementation for Cloud
 
-use async_trait::async_trait;
 use crate::error::ValidationResult;
+use async_trait::async_trait;
 
 #[derive(Debug, Clone)]
 pub struct User {

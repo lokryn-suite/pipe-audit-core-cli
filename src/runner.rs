@@ -1,9 +1,7 @@
 use crate::contracts::SchemaContracts;
-use crate::core::validation::execute_validation;
-use crate::logging::schema::{AuditLogEntry, Contract, Executor};
-use crate::logging::writer::log_and_print;
+use crate::core::orchestration::run_contract_validation;
+use crate::logging::schema::Executor;
 use anyhow::Result;
-use chrono::Utc;
 use hostname;
 use whoami;
 
@@ -13,8 +11,8 @@ use crate::movement::FileMovement;
 use crate::profiles::load_profiles;
 
 pub async fn validate_data(
-    data: &[u8],
-    extension: &str,
+    _data: &[u8],
+    _extension: &str,
     contracts: &SchemaContracts,
 ) -> Result<()> {
     let hostname = hostname::get()
@@ -27,40 +25,19 @@ pub async fn validate_data(
         host: hostname,
     };
 
-    // Call core validation (handles all validation audit logging internally)
-    let results = execute_validation(data, extension, contracts, &executor).await?;
+    // Use orchestration layer with console output
+    let outcome = run_contract_validation(
+        &contracts.contract.name,
+        &executor,
+        true, // log_to_console = true for CLI
+    ).await?;
 
-    // Count results
-    let pass_count = results.iter().filter(|r| r.result == "pass").count();
-    let fail_count = results.iter().filter(|r| r.result == "fail").count();
-
-    // Final completion event
-    log_and_print(
-        &AuditLogEntry {
-            timestamp: Utc::now().to_rfc3339(),
-            level: "AUDIT",
-            event: "validation_complete",
-            contract: Some(Contract {
-                name: &contracts.contract.name,
-                version: &contracts.contract.version,
-            }),
-            target: None,
-            results: Some(results.clone()),
-            executor: executor.clone(),
-            details: None,
-            summary: None,
-        },
-        &format!(
-            "✅ Contract {} v{}: {} PASS, {} FAIL",
-            contracts.contract.name, contracts.contract.version, pass_count, fail_count
-        ),
-    );
 
     // File movement logic (CLI-specific feature)
     #[cfg(feature = "file-management")]
     {
         let validation_passed = fail_count == 0;
-        
+
         let profiles = match load_profiles() {
             Ok(profiles) => profiles,
             Err(_) => {
@@ -93,12 +70,16 @@ pub async fn validate_data(
         let driver = crate::drivers::get_driver(extension)?;
         let df = driver.load(data)?;
 
-        let dest_valid = contracts.destination.as_ref()
+        let dest_valid = contracts
+            .destination
+            .as_ref()
             .and_then(|d| d.r#type.as_ref())
             .map(|t| t != "not_moved")
             .unwrap_or(false);
-            
-        let quarantine_valid = contracts.quarantine.as_ref()
+
+        let quarantine_valid = contracts
+            .quarantine
+            .as_ref()
             .and_then(|q| q.r#type.as_ref())
             .map(|t| t != "not_moved")
             .unwrap_or(false);
