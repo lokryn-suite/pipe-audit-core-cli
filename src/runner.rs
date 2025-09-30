@@ -26,7 +26,7 @@ pub async fn validate_data(
     };
 
     // Use orchestration layer with console output
-    let outcome = run_contract_validation(
+    let _outcome = run_contract_validation(
         &contracts.contract.name,
         &executor,
         true, // log_to_console = true for CLI
