@@ -1,6 +1,17 @@
-use crate::core::orchestration::{run_contract_validation};
+use crate::engine::{
+    run_contract_validation,
+    run_health_check as engine_run_health_check,
+    list_contracts as engine_list_contracts,
+    get_contract as engine_get_contract,
+    validate_contract as engine_validate_contract,
+    list_profiles as engine_list_profiles,
+    test_profile as engine_test_profile,
+    verify_logs as engine_verify_logs
+};
 use crate::logging::schema::Executor;
+use crate::logging::verify::FileStatus;
 use axum::{extract::Path, http::StatusCode, Json, extract::Query};
+use glob;
 use hostname;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -33,7 +44,7 @@ pub async fn health_check() -> (StatusCode, Json<HealthResponse>) {
         host: hostname,
     };
 
-    let status = crate::core::orchestration::run_health_check(&executor, false);
+    let (status, _message) = engine_run_health_check(&executor, false);
     
     (
         StatusCode::OK,
@@ -45,7 +56,7 @@ pub async fn health_check() -> (StatusCode, Json<HealthResponse>) {
 }
 // ===== RUN VALIDATION =====
 
-pub async fn run_contract(Path(contract_name): Path<String>) -> StatusCode {
+pub async fn run_contract(Path(contract_name): Path<String>) -> (StatusCode, Json<Value>) {
     let hostname = hostname::get()
         .unwrap_or_default()
         .to_string_lossy()
@@ -58,12 +69,29 @@ pub async fn run_contract(Path(contract_name): Path<String>) -> StatusCode {
 
     // Use orchestration layer - no console output for API
     match run_contract_validation(&contract_name, &executor, false).await {
-        Ok(_) => StatusCode::NO_CONTENT,
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        Ok((outcome, message)) => (
+            StatusCode::OK,
+            Json(json!({
+                "success": true,
+                "message": message,
+                "outcome": {
+                    "passed": outcome.passed,
+                    "pass_count": outcome.pass_count,
+                    "fail_count": outcome.fail_count
+                }
+            })),
+        ),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "success": false,
+                "message": "Validation failed"
+            })),
+        ),
     }
 }
 
-pub async fn run_all() -> StatusCode {
+pub async fn run_all() -> (StatusCode, Json<Value>) {
     let hostname = hostname::get()
         .unwrap_or_default()
         .to_string_lossy()
@@ -77,8 +105,17 @@ pub async fn run_all() -> StatusCode {
     // Get all contract files
     let contract_files: Vec<_> = match glob::glob("contracts/*.toml") {
         Ok(paths) => paths.filter_map(Result::ok).collect(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
+        Err(_) => return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "success": false,
+                "message": "Failed to read contracts directory"
+            })),
+        ),
     };
+
+    let mut results = Vec::new();
+    let mut all_passed = true;
 
     // Run each contract
     for path in contract_files {
@@ -87,52 +124,69 @@ pub async fn run_all() -> StatusCode {
             None => continue,
         };
         
-        if let Err(_) = run_contract_validation(contract_name, &executor, false).await {
-            return StatusCode::INTERNAL_SERVER_ERROR;
+        match run_contract_validation(contract_name, &executor, false).await {
+            Ok((outcome, message)) => {
+                results.push(json!({
+                    "contract": contract_name,
+                    "success": true,
+                    "message": message,
+                    "outcome": {
+                        "passed": outcome.passed,
+                        "pass_count": outcome.pass_count,
+                        "fail_count": outcome.fail_count
+                    }
+                }));
+                if !outcome.passed {
+                    all_passed = false;
+                }
+            }
+            Err(_) => {
+                results.push(json!({
+                    "contract": contract_name,
+                    "success": false,
+                    "message": "Validation failed"
+                }));
+                all_passed = false;
+            }
         }
     }
 
-    StatusCode::NO_CONTENT
-}
-pub async fn list_contracts() -> (StatusCode, Json<Value>) {
-    let contracts: Vec<String> = match glob::glob("contracts/*.toml") {
-        Ok(paths) => paths
-            .filter_map(Result::ok)
-            .filter_map(|p| {
-                p.file_stem()
-                    .and_then(|s| s.to_str())
-                    .map(|s| s.to_string())
-            })
-            .collect(),
-        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))),
-    };
-
-    (StatusCode::OK, Json(json!({ "contracts": contracts })))
-}
-
-pub async fn get_contract(Path(name): Path<String>) -> (StatusCode, Json<Value>) {
-    use crate::contracts::load_contract_for_file;
-    use std::path::Path as StdPath;
-
-    let contract_path = format!("contracts/{}.toml", name);
-    
-    if !StdPath::new(&contract_path).exists() {
-        return (
-            StatusCode::OK,
-            Json(json!({
-                "name": name,
-                "exists": false
-            })),
-        );
-    }
-
-    let contract = load_contract_for_file(StdPath::new(&contract_path));
     (
         StatusCode::OK,
         Json(json!({
-            "name": contract.contract.name,
-            "version": contract.contract.version,
-            "exists": true
+            "success": all_passed,
+            "message": if all_passed { "All contracts validated successfully" } else { "Some contracts failed validation" },
+            "results": results
+        })),
+    )
+}
+pub async fn list_contracts() -> (StatusCode, Json<Value>) {
+    match engine_list_contracts() {
+        Ok((contract_list, message)) => (
+            StatusCode::OK,
+            Json(json!({
+                "contracts": contract_list.contracts,
+                "message": message
+            })),
+        ),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error": "Failed to read contracts"
+            })),
+        ),
+    }
+}
+
+pub async fn get_contract(Path(name): Path<String>) -> (StatusCode, Json<Value>) {
+    let (info, message) = engine_get_contract(&name);
+    (
+        StatusCode::OK,
+        Json(json!({
+            "name": info.name,
+            "version": info.version,
+            "exists": info.exists,
+            "message": message
         })),
     )
 }
@@ -144,45 +198,42 @@ pub struct ValidateContractRequest {
 
 // GET /api/v1/contracts/:name/validate
 pub async fn validate_contract(Path(name): Path<String>) -> (StatusCode, Json<Value>) {
-    use crate::contracts::load_contract_for_file;
-    use std::path::Path as StdPath;
+    let (validation, message) = engine_validate_contract(&name);
 
-    let contract_path = format!("contracts/{}.toml", name);
-    
-    if !StdPath::new(&contract_path).exists() {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "valid": false,
-                "error": "Contract not found"
-            })),
-        );
-    }
-
-    // Try to load it - if it loads, it's valid
-    match std::panic::catch_unwind(|| load_contract_for_file(StdPath::new(&contract_path))) {
-        Ok(_) => (
+    if validation.valid {
+        (
             StatusCode::OK,
-            Json(json!({ "valid": true })),
-        ),
-        Err(_) => (
+            Json(json!({
+                "valid": true,
+                "message": message
+            })),
+        )
+    } else {
+        (
             StatusCode::OK,
             Json(json!({
                 "valid": false,
-                "error": "Contract failed to parse"
+                "error": validation.error,
+                "message": message
             })),
-        ),
+        )
     }
 }
 pub async fn list_profiles() -> (StatusCode, Json<Value>) {
-    use crate::profiles::load_profiles;
-
-    match load_profiles() {
-        Ok(profiles) => {
-            let profile_names: Vec<String> = profiles.keys().cloned().collect();
-            (StatusCode::OK, Json(json!({ "profiles": profile_names })))
-        }
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))),
+    match engine_list_profiles() {
+        Ok((profile_list, message)) => (
+            StatusCode::OK,
+            Json(json!({
+                "profiles": profile_list.profiles,
+                "message": message
+            })),
+        ),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error": "Failed to read profiles"
+            })),
+        ),
     }
 }
 
@@ -191,59 +242,53 @@ pub struct TestProfileRequest {
     pub profile: String,
 }
 
-pub async fn test_profile(Json(payload): Json<TestProfileRequest>) -> StatusCode {
-    use crate::profiles::load_profiles;
+pub async fn test_profile(Json(payload): Json<TestProfileRequest>) -> (StatusCode, Json<Value>) {
+    let (result, message) = engine_test_profile(&payload.profile).await;
 
-    let profiles = match load_profiles() {
-        Ok(p) => p,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
-    };
-
-    if profiles.contains_key(&payload.profile) {
-        // Profile exists and is configured
-        // TODO: Could add actual connectivity test here later
-        StatusCode::NO_CONTENT
+    if result.exists && result.connected {
+        (
+            StatusCode::OK,
+            Json(json!({
+                "success": true,
+                "message": message
+            })),
+        )
     } else {
-        StatusCode::BAD_REQUEST
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "success": false,
+                "message": message,
+                "exists": result.exists,
+                "connected": result.connected
+            })),
+        )
     }
 }
 
 pub async fn verify_logs(Query(params): Query<VerifyLogsQuery>) -> (StatusCode, Json<Value>) {
-    use crate::logging::verify::{verify_date, verify_all};
+    let (verification, message) = engine_verify_logs(params.date.as_deref());
 
-    let summary = if let Some(date) = params.date {
-        verify_date(Some(date.as_str()))
-    } else {
-        verify_all()
-    };
-
-    // VerificationSummary fields: verified, mismatched, missing, malformed, unsealed, files
-    let all_valid = summary.mismatched == 0 
-        && summary.missing == 0 
-        && summary.malformed == 0 
-        && summary.unsealed == 0;
-
-    if all_valid {
-        (
-            StatusCode::OK,
-            Json(json!({
-                "valid": true,
-                "verified": summary.verified,
-                "message": "Log integrity verified"
-            })),
-        )
-    } else {
-        (
-            StatusCode::OK,
-            Json(json!({
-                "valid": false,
-                "verified": summary.verified,
-                "mismatched": summary.mismatched,
-                "missing": summary.missing,
-                "malformed": summary.malformed,
-                "unsealed": summary.unsealed,
-                "message": "Log integrity check failed"
-            })),
-        )
-    }
+    (
+        StatusCode::OK,
+        Json(json!({
+            "valid": verification.valid,
+            "verified": verification.verified,
+            "mismatched": verification.mismatched,
+            "missing": verification.missing,
+            "malformed": verification.malformed,
+            "unsealed": verification.unsealed,
+            "message": message,
+            "files": verification.files.iter().map(|f| json!({
+                "filename": f.filename,
+                "status": match f.status {
+                    FileStatus::Verified => "verified",
+                    FileStatus::Mismatched => "mismatched",
+                    FileStatus::Missing => "missing",
+                    FileStatus::Malformed => "malformed",
+                    FileStatus::Unsealed => "unsealed",
+                }
+            })).collect::<Vec<_>>()
+        })),
+    )
 }

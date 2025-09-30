@@ -1,18 +1,5 @@
-use crate::core::orchestration::run_health_check;
-use crate::logging::schema::Executor;
-use hostname;
-use whoami;
+use crate::engine::run_health_command;
 
 pub async fn run() {
-    let hostname = hostname::get()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string();
-
-    let executor = Executor {
-        user: whoami::username(),
-        host: hostname,
-    };
-
-    run_health_check(&executor, true);
+    run_health_command().await;
 }

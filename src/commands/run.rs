@@ -1,7 +1,5 @@
-use crate::core::orchestration::run_contract_validation;
-use crate::logging::schema::{AuditLogEntry, Contract, Executor};
-use crate::logging::writer::log_and_print;
-use chrono::Utc;
+use crate::engine::run_contract_validation;
+use crate::logging::schema::Executor;
 use glob::glob;
 use hostname;
 use std::path::Path;
@@ -26,11 +24,19 @@ pub async fn run_all() {
                     .and_then(|s| s.to_str())
                     .unwrap_or("unknown");
 
-                if let Err(_) = run_contract_validation(contract_name, &executor, true).await {
-                    eprintln!(
-                        "❌ Validation failed for {}. Check logs for details.",
-                        contract_name
-                    );
+                match run_contract_validation(contract_name, &executor, true).await {
+                    Ok((outcome, message)) => {
+                        println!("{}", message);
+                        if !outcome.passed {
+                            eprintln!("⚠️  Validation completed with failures for {}", contract_name);
+                        }
+                    }
+                    Err(_) => {
+                        eprintln!(
+                            "❌ Validation failed for {}. Check logs for details.",
+                            contract_name
+                        );
+                    }
                 }
             }
             Err(_) => eprintln!("❌ Error reading contract files. Check logs for details."),
@@ -58,31 +64,15 @@ pub async fn run_single(contract_name: &str) {
     }
 
     match run_contract_validation(contract_name, &executor, true).await {
-        Ok(_) => {
-            let entry = AuditLogEntry {
-                timestamp: Utc::now().to_rfc3339(),
-                level: "AUDIT",
-                event: "process_complete",
-                contract: Some(Contract {
-                    name: contract_name,
-                    version: "0.1.0",
-                }),
-                target: None,
-                results: None,
-                executor,
-                details: None,
-                summary: None,
-            };
-            log_and_print(
-                &entry,
-                &format!("✅ Process complete for {}", contract_name),
-            );
+        Ok((outcome, message)) => {
+            println!("{}", message);
+            if !outcome.passed {
+                eprintln!("⚠️  Validation completed with {} failures out of {} checks", 
+                         outcome.fail_count, outcome.pass_count + outcome.fail_count);
+            }
         }
         Err(_) => {
-            eprintln!(
-                "❌ Validation failed for {}. Check logs for details.",
-                contract_name
-            );
+            eprintln!("❌ Validation failed for {}. Check logs for details.", contract_name);
         }
     }
 }

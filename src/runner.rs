@@ -1,5 +1,5 @@
 use crate::contracts::SchemaContracts;
-use crate::core::orchestration::run_contract_validation;
+use crate::engine::run_contract_validation;
 use crate::logging::schema::Executor;
 use anyhow::Result;
 use hostname;

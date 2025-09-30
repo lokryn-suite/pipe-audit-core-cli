@@ -2,10 +2,11 @@
 //! Both CLI and API call these functions
 
 use crate::connectors::{AzureConnector, Connector, GCSConnector, S3Connector};
-use crate::core::validation::execute_validation;
+use super::validation::execute_validation;
 use crate::error::ValidationResult;
-use crate::logging::schema::{AuditLogEntry, Contract, Executor, RuleResult, Target};
-use crate::logging::writer::{log_and_print, log_event};
+use crate::engine::log_action;
+use crate::logging::{AuditLogEntry, Executor, RuleResult, log_event};
+use crate::logging::writer::log_and_print;
 use crate::profiles::{load_profiles, Profiles};
 use chrono::Utc;
 use std::path::Path as StdPath;
@@ -26,22 +27,13 @@ pub struct HealthStatus {
     pub profile_count: usize,
 }
 
-/// Helper to log with optional console output
-fn log_audit(entry: &AuditLogEntry, console_msg: &str, log_to_console: bool) {
-    if log_to_console {
-        log_and_print(entry, console_msg);
-    } else {
-        log_event(entry);
-    }
-}
-
 /// Run a single contract validation
 /// Handles: file acquisition, logging, validation execution
 pub async fn run_contract_validation(
     contract_name: &str,
     executor: &Executor,
     log_to_console: bool,
-) -> ValidationResult<ValidationOutcome> {
+) -> ValidationResult<(ValidationOutcome, String)> {
     let contract_path = format!("contracts/{}.toml", contract_name);
 
     if !StdPath::new(&contract_path).exists() {
@@ -62,58 +54,17 @@ pub async fn run_contract_validation(
         crate::error::ValidationError::Other("Source missing location".to_string())
     })?;
 
-    // Log file acquisition
-    log_audit(
-        &AuditLogEntry {
-            timestamp: Utc::now().to_rfc3339(),
-            level: "AUDIT",
-            event: "file_acquired",
-            contract: None,
-            target: Some(Target {
-                file: location,
-                column: None,
-                rule: None,
-            }),
-            results: None,
-            executor: executor.clone(),
-            details: source
-                .profile
-                .as_ref()
-                .map(|p| format!("profile={}", p))
-                .as_deref(),
-            summary: None,
-        },
-        &format!(
-            "🔎 Fetching {} via profile {}",
-            location,
-            source.profile.as_ref().unwrap_or(&"local".to_string())
-        ),
-        log_to_console,
-    );
+    // Log contract validation start
+    let start_message = log_action("contract_validation_started", None, Some(contract_name), None, None);
+    if log_to_console {
+        println!("{}", start_message);
+    }
 
     // Fetch data
     let data = fetch_data_from_source(source, &profiles).await?;
 
     // Log file read
-    log_audit(
-        &AuditLogEntry {
-            timestamp: Utc::now().to_rfc3339(),
-            level: "AUDIT",
-            event: "file_read",
-            contract: None,
-            target: Some(Target {
-                file: location,
-                column: None,
-                rule: None,
-            }),
-            results: None,
-            executor: executor.clone(),
-            details: Some(&format!("bytes={}", data.len())),
-            summary: None,
-        },
-        &format!("📊 Read {} bytes", data.len()),
-        log_to_console,
-    );
+    let _ = log_action("file_read", Some(&format!("bytes={}", data.len())), None, None, Some(location));
 
     // Get extension
     let extension = source
@@ -129,35 +80,19 @@ pub async fn run_contract_validation(
     let pass_count = results.iter().filter(|r| r.result == "pass").count();
     let fail_count = results.iter().filter(|r| r.result == "fail").count();
 
-    // Log completion
-    log_audit(
-        &AuditLogEntry {
-            timestamp: Utc::now().to_rfc3339(),
-            level: "AUDIT",
-            event: "validation_complete",
-            contract: Some(Contract {
-                name: &contracts.contract.name,
-                version: &contracts.contract.version,
-            }),
-            target: None,
-            results: Some(results.clone()),
-            executor: executor.clone(),
-            details: None,
-            summary: None,
-        },
-        &format!(
-            "✅ Contract {} v{}: {} PASS, {} FAIL",
-            contracts.contract.name, contracts.contract.version, pass_count, fail_count
-        ),
-        log_to_console,
-    );
+    // Log completion and create message
+    let details = format!("pass={}, fail={}", pass_count, fail_count);
+    let message = log_action("contract_validation_completed", Some(&details), Some(&contracts.contract.name), Some(&contracts.contract.version), None);
+    if log_to_console {
+        println!("{}", message);
+    }
 
-    Ok(ValidationOutcome {
+    Ok((ValidationOutcome {
         passed: fail_count == 0,
         pass_count,
         fail_count,
         results,
-    })
+    }, message))
 }
 
 /// Fetch data from a source configuration
@@ -270,7 +205,7 @@ pub fn check_system_health() -> HealthStatus {
 }
 
 /// Run health check with logging
-pub fn run_health_check(executor: &Executor, log_to_console: bool) -> HealthStatus {
+pub fn run_health_check(executor: &Executor, log_to_console: bool) -> (HealthStatus, String) {
     let status = check_system_health();
 
     let log_fn = |entry: &AuditLogEntry, msg: &str| {
@@ -336,20 +271,10 @@ pub fn run_health_check(executor: &Executor, log_to_console: bool) -> HealthStat
         "system unhealthy"
     };
 
-    log_fn(
-        &AuditLogEntry {
-            timestamp: Utc::now().to_rfc3339(),
-            level: "AUDIT",
-            event: "health_summary",
-            contract: None,
-            target: None,
-            results: None,
-            executor: executor.clone(),
-            details: Some(summary_msg),
-            summary: None,
-        },
-        &format!("📊 System status: {}", summary_msg),
-    );
+    let message = log_action("health_check", Some(summary_msg), None, None, None);
+    if log_to_console {
+        println!("{}", message);
+    }
 
-    status
+    (status, message)
 }

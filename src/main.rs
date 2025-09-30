@@ -39,6 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ProfileCommands::Test { profile } => commands::profile::test(&profile).await,
         },
         Some(Commands::Health) => commands::health::run().await,
+        
         Some(Commands::Logs { logs_command }) => match logs_command {
             LogsCommands::Verify { date, all } => {
                 commands::logs::verify(date.as_deref(), all).await;

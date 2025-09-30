@@ -36,7 +36,7 @@ pub mod drivers;
 
 // ===== CORE BUSINESS LOGIC =====
 /// Shared business logic used by both CLI and API
-pub mod core;
+pub mod engine;
 
 /// Storage and auth abstractions
 pub mod traits;
@@ -50,10 +50,6 @@ pub mod cli;
 /// CLI commands - not part of stable API, may change  
 #[doc(hidden)]
 pub mod commands;
-
-#[doc(hidden)]
-/// Internal engine
-pub mod engine;
 
 /// Logging setup
 pub mod logging;
