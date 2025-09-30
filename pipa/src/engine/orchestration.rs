@@ -3,7 +3,7 @@
 
 use crate::connectors::{AzureConnector, Connector, GCSConnector, S3Connector};
 use super::validation::execute_validation;
-use crate::error::ValidationResult;
+use crate::logging::error::{ValidationResult, ValidationError};
 use crate::engine::log_action;
 use crate::logging::{AuditLogEntry, Executor, RuleResult, log_event};
 use crate::logging::writer::log_and_print;
@@ -37,7 +37,7 @@ pub async fn run_contract_validation(
     let contract_path = format!("contracts/{}.toml", contract_name);
 
     if !StdPath::new(&contract_path).exists() {
-        return Err(crate::error::ValidationError::Other(format!(
+        return Err(ValidationError::Other(format!(
             "Contract '{}' not found",
             contract_name
         )));
@@ -47,11 +47,11 @@ pub async fn run_contract_validation(
     let profiles = load_profiles()?;
 
     let source = contracts.source.as_ref().ok_or_else(|| {
-        crate::error::ValidationError::Other("Contract missing source".to_string())
+        ValidationError::Other("Contract missing source".to_string())
     })?;
 
     let location = source.location.as_ref().ok_or_else(|| {
-        crate::error::ValidationError::Other("Source missing location".to_string())
+        ValidationError::Other("Source missing location".to_string())
     })?;
 
     // Log contract validation start
@@ -101,90 +101,90 @@ async fn fetch_data_from_source(
     profiles: &Profiles,
 ) -> ValidationResult<Vec<u8>> {
     let location = source.location.as_ref().ok_or_else(|| {
-        crate::error::ValidationError::Other("Source missing location".to_string())
+        ValidationError::Other("Source missing location".to_string())
     })?;
 
     match source.r#type.as_str() {
-        "local" => std::fs::read(location).map_err(|e| crate::error::ValidationError::Io(e)),
+        "local" => std::fs::read(location).map_err(|e| ValidationError::Io(e)),
         "s3" => {
             let profile_name = source.profile.as_ref().ok_or_else(|| {
-                crate::error::ValidationError::Other("S3 source requires profile".to_string())
+                ValidationError::Other("S3 source requires profile".to_string())
             })?;
             let profile = profiles.get(profile_name).ok_or_else(|| {
-                crate::error::ValidationError::ProfileNotFound(profile_name.clone())
+                ValidationError::ProfileNotFound(profile_name.clone())
             })?;
 
             let url = url::Url::parse(location)
-                .map_err(|_| crate::error::ValidationError::Other("Invalid URL".to_string()))?;
+                .map_err(|_| ValidationError::Other("Invalid URL".to_string()))?;
 
             let connector = S3Connector::from_profile_and_url(profile, &url)
                 .await
-                .map_err(|e| crate::error::ValidationError::Connector(e.to_string()))?;
+                .map_err(|e| ValidationError::Connector(e.to_string()))?;
 
             let mut reader = connector
                 .fetch(location)
                 .await
-                .map_err(|e| crate::error::ValidationError::Connector(e.to_string()))?;
+                .map_err(|e| ValidationError::Connector(e.to_string()))?;
 
             let mut buffer = Vec::new();
             std::io::Read::read_to_end(&mut reader, &mut buffer)
-                .map_err(|e| crate::error::ValidationError::Io(e))?;
+                .map_err(|e| ValidationError::Io(e))?;
 
             Ok(buffer)
         }
         "azure" => {
             let profile_name = source.profile.as_ref().ok_or_else(|| {
-                crate::error::ValidationError::Other("Azure source requires profile".to_string())
+                ValidationError::Other("Azure source requires profile".to_string())
             })?;
             let profile = profiles.get(profile_name).ok_or_else(|| {
-                crate::error::ValidationError::ProfileNotFound(profile_name.clone())
+               ValidationError::ProfileNotFound(profile_name.clone())
             })?;
 
             let url = url::Url::parse(location)
-                .map_err(|_| crate::error::ValidationError::Other("Invalid URL".to_string()))?;
+                .map_err(|_| ValidationError::Other("Invalid URL".to_string()))?;
 
             let connector = AzureConnector::from_profile_and_url(profile, &url)
                 .await
-                .map_err(|e| crate::error::ValidationError::Connector(e.to_string()))?;
+                .map_err(|e| ValidationError::Connector(e.to_string()))?;
 
             let mut reader = connector
                 .fetch(location)
                 .await
-                .map_err(|e| crate::error::ValidationError::Connector(e.to_string()))?;
+                .map_err(|e| ValidationError::Connector(e.to_string()))?;
 
             let mut buffer = Vec::new();
             std::io::Read::read_to_end(&mut reader, &mut buffer)
-                .map_err(|e| crate::error::ValidationError::Io(e))?;
+                .map_err(|e| ValidationError::Io(e))?;
 
             Ok(buffer)
         }
         "gcs" => {
             let profile_name = source.profile.as_ref().ok_or_else(|| {
-                crate::error::ValidationError::Other("GCS source requires profile".to_string())
+                ValidationError::Other("GCS source requires profile".to_string())
             })?;
             let profile = profiles.get(profile_name).ok_or_else(|| {
-                crate::error::ValidationError::ProfileNotFound(profile_name.clone())
+                ValidationError::ProfileNotFound(profile_name.clone())
             })?;
 
             let url = url::Url::parse(location)
-                .map_err(|_| crate::error::ValidationError::Other("Invalid URL".to_string()))?;
+                .map_err(|_| ValidationError::Other("Invalid URL".to_string()))?;
 
             let connector = GCSConnector::from_profile_and_url(profile, &url)
                 .await
-                .map_err(|e| crate::error::ValidationError::Connector(e.to_string()))?;
+                .map_err(|e| ValidationError::Connector(e.to_string()))?;
 
             let mut reader = connector
                 .fetch(location)
                 .await
-                .map_err(|e| crate::error::ValidationError::Connector(e.to_string()))?;
+                .map_err(|e| ValidationError::Connector(e.to_string()))?;
 
             let mut buffer = Vec::new();
             std::io::Read::read_to_end(&mut reader, &mut buffer)
-                .map_err(|e| crate::error::ValidationError::Io(e))?;
+                .map_err(|e| ValidationError::Io(e))?;
 
             Ok(buffer)
         }
-        _ => Err(crate::error::ValidationError::Other(format!(
+        _ => Err(ValidationError::Other(format!(
             "Unsupported source type: {}",
             source.r#type
         ))),

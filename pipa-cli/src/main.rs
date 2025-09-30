@@ -1,9 +1,13 @@
 // pipeaudit-core/src/main.rs
 
 use clap::Parser;
-use pipa::cli::{Cli, Commands, ContractCommands, LogsCommands, ProfileCommands};
-use pipa::commands;
+use pipa::engine;
 use pipa::logging;
+
+mod cli;
+mod commands;
+
+use cli::{Cli, Commands, ContractCommands, LogsCommands, ProfileCommands};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

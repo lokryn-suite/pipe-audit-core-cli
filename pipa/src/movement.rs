@@ -1,10 +1,6 @@
 use crate::connectors::S3Connector;
 use crate::contracts::schema::{Destination, Quarantine, Source};
 use crate::profiles::Profiles;
-use chrono::Utc;
-use polars::prelude::*;
-use std::io::Cursor;
-use std::path::Path;
 
 #[cfg(feature = "file-management")]
 pub struct FileMovement;

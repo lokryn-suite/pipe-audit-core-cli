@@ -1,7 +1,7 @@
 //! Authentication context trait
 //! Stub implementation for Docker, real implementation for Cloud
 
-use crate::error::ValidationResult;
+use crate::logging::error::ValidationResult;
 use async_trait::async_trait;
 
 #[derive(Debug, Clone)]

@@ -1,7 +1,6 @@
 mod orchestration;
 mod validation;
 mod health;
-mod limits;
 mod profiles;
 mod contracts;
 mod logs;
@@ -11,7 +10,6 @@ mod logging;
 pub use self::orchestration::{run_contract_validation, run_health_check, ValidationOutcome, HealthStatus};
 pub use self::validation::{execute_validation, validate_dataframe};
 pub use self::health::run as run_health_command;
-pub use self::limits::Limits;
 pub use self::profiles::{list_profiles, test_profile, ProfileList, ProfileTestResult};
 pub use self::contracts::{list_contracts, get_contract, validate_contract, ContractList, ContractInfo, ContractValidation};
 pub use self::logs::{verify_logs, LogVerification};

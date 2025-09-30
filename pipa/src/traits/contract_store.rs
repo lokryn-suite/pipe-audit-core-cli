@@ -1,7 +1,7 @@
 //! Contract storage abstraction
 
 use crate::contracts::SchemaContracts;
-use crate::error::ValidationResult;
+use crate::logging::error::ValidationResult;
 use async_trait::async_trait;
 
 #[async_trait]

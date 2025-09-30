@@ -1,6 +1,6 @@
 use crate::contracts::{ContractType, SchemaContracts};
 use crate::drivers::get_driver;
-use crate::error::ValidationResult;
+use crate::logging::error::ValidationResult;
 use crate::logging::schema::{AuditLogEntry, Contract, Executor, RuleResult};
 use crate::logging::writer::log_event;
 use crate::validators::column::{

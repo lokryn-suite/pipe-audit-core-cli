@@ -1,6 +1,6 @@
 // src/validators.rs
 
-use crate::error::ValidationResult;
+use crate::logging::error::ValidationResult;
 use polars::prelude::*;
 
 // Sub-modules for different validator types

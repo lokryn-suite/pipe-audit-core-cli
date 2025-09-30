@@ -68,28 +68,39 @@ pub fn validate_contract(name: &str) -> (ContractValidation, String) {
     let contract_path = format!("contracts/{}.toml", name);
 
     if !Path::new(&contract_path).exists() {
-        let message = log_action("contract_validated", Some("error=Contract not found"), Some(name), None, None);
-        return (ContractValidation {
-            valid: false,
-            error: Some("Contract not found".to_string()),
-        }, message);
+        let message = log_action(
+            "contract_validated",
+            Some("error=Contract not found"),
+            Some(name),
+            None,
+            None
+        );
+        return (
+            ContractValidation { valid: false, error: Some("Contract not found".to_string()) },
+            message
+        );
     }
 
-    // Try to load it - if it loads, it's valid
     match std::panic::catch_unwind(|| load_contract_for_file(Path::new(&contract_path))) {
-        Ok(_) => {
-            let message = log_action("contract_validated", Some("valid=true"), Some(name), None, None);
-            (ContractValidation {
-                valid: true,
-                error: None,
-            }, message)
+        Ok(contract) => {
+            let message = log_action(
+                "contract_validated",
+                Some("valid=true"),
+                Some(&contract.contract.name),
+                Some(&contract.contract.version),
+                None
+            );
+            (ContractValidation { valid: true, error: None }, message)
         }
         Err(_) => {
-            let message = log_action("contract_validated", Some("error=Contract failed to parse"), Some(name), None, None);
-            (ContractValidation {
-                valid: false,
-                error: Some("Contract failed to parse".to_string()),
-            }, message)
+            let message = log_action(
+                "contract_validated",
+                Some("error=Contract failed to parse"),
+                Some(name),
+                None,
+                None
+            );
+            (ContractValidation { valid: false, error: Some("Contract failed to parse".to_string()) }, message)
         }
     }
 }
