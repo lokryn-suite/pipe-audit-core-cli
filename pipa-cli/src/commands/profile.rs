@@ -1,4 +1,4 @@
-use crate::engine::{list_profiles, test_profile};
+use pipa::profile::{list_profiles, test_profile};
 
 pub async fn list() {
     match list_profiles() {

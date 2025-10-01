@@ -1,8 +1,12 @@
 // pipeaudit-core/src/main.rs
 
 use clap::Parser;
-use pipa::engine;
-use pipa::logging;
+use pipa::contract;
+use pipa::profile;
+use pipa::run;
+use pipa::logs;
+use pipa::health;
+use pipa::init;
 
 mod cli;
 mod commands;
@@ -49,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 commands::logs::verify(date.as_deref(), all).await;
             }
         },
-        Some(Commands::Init) => commands::init::run().await,
+        Some(Commands::Init) => commands::init::init_project().await,
         None => {
             println!("No command specified. Use --help for usage information.");
         }

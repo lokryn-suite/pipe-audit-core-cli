@@ -1,7 +1,7 @@
-use crate::logging::schema::Executor;
+use pipa::run::run_contract_validation;
 use glob::glob;
 use hostname;
-use pipa::engine::contracts::run_contract_validation;
+use pipa::contract::Executor;
 use std::path::Path;
 use whoami;
 

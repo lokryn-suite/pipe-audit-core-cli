@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-pub fn run() -> Result<String, Box<dyn std::error::Error>> {
+pub fn init_project() -> Result<String, Box<dyn std::error::Error>> {
     fs::create_dir_all("logs")?;
     fs::create_dir_all("contracts")?;
 

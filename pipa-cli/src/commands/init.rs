@@ -1,8 +1,6 @@
-use pipa::engine::init;
+use pipa::init::init_project;
 
-pub async fn run() {
-    match init::run() {
-        Ok(msg) => println!("✅ {}", msg),
-        Err(e) => eprintln!("❌ Init failed: {}", e),
-    }
+match init_project() {
+    Ok(msg) => println!("{}", msg),
+    Err(e) => eprintln!("❌ {}", e),
 }
