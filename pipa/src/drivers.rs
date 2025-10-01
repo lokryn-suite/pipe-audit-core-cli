@@ -3,7 +3,7 @@
 pub mod csv;
 pub mod parquet;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use polars::prelude::*;
 
 /// Trait that all drivers implement to load data from an in-memory byte slice.

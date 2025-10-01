@@ -1,5 +1,6 @@
-use crate::engine::run_health_command;
+use pipa::run_health_check;
 
 pub async fn run() {
-    run_health_command().await;
+    let (_status, message) = run_health_check(true); // pass true to log to console
+    println!("{}", message);
 }

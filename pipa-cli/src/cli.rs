@@ -38,6 +38,7 @@ pub enum Commands {
         #[command(subcommand)]
         logs_command: LogsCommands,
     },
+    Init,
 }
 
 #[derive(Subcommand, Debug)]

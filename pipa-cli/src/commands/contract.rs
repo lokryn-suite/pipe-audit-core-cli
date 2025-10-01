@@ -23,7 +23,7 @@ pub async fn validate(file: &str) {
 pub async fn show(name: &str) {
     let (contract_info, message) = get_contract(name);
     println!("{}", message);
-    
+
     if contract_info.exists {
         let path = format!("contracts/{}.toml", name);
         match fs::read_to_string(&path) {

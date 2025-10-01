@@ -1,16 +1,18 @@
-mod orchestration;
-mod validation;
-mod health;
-mod profiles;
-mod contracts;
-mod logs;
-mod logging;
+pub mod contracts;
+pub mod init;
+pub mod logging;
+pub mod logs;
+pub mod profiles;
+pub mod system;
+pub mod validation;
 
 // Re-export core functions for public use
-pub use self::orchestration::{run_contract_validation, run_health_check, ValidationOutcome, HealthStatus};
-pub use self::validation::{execute_validation, validate_dataframe};
-pub use self::health::run as run_health_command;
-pub use self::profiles::{list_profiles, test_profile, ProfileList, ProfileTestResult};
-pub use self::contracts::{list_contracts, get_contract, validate_contract, ContractList, ContractInfo, ContractValidation};
-pub use self::logs::{verify_logs, LogVerification};
+
+pub use self::contracts::{
+    ContractInfo, ContractList, ContractValidation, get_contract, list_contracts, validate_contract,
+};
 pub use self::logging::log_action;
+pub use self::logs::{LogVerification, verify_logs};
+pub use self::profiles::{ProfileList, ProfileTestResult, list_profiles, test_profile};
+pub use self::system::{check_system_health, run_health_check};
+pub use self::validation::{execute_validation, validate_dataframe};

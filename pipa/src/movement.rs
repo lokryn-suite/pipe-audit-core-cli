@@ -1,11 +1,17 @@
-use crate::connectors::S3Connector;
+use crate::connectors::{S3Connector, AzureConnector, GCSConnector};
 use crate::contracts::schema::{Destination, Quarantine, Source};
+use crate::engine::profiles::test_profile_internal;
 use crate::profiles::Profiles;
+use anyhow::{Result, anyhow, bail};
+use chrono::Utc;
+use polars::prelude::{DataFrame, CsvWriter, ParquetWriter};
+use polars_io::SerWriter;
+use std::io::Cursor;
+use std::path::Path;
+use url::Url;
 
-#[cfg(feature = "file-management")]
 pub struct FileMovement;
 
-#[cfg(feature = "file-management")]
 impl FileMovement {
     pub async fn validate_profiles(
         source: Option<&Source>,
@@ -43,13 +49,12 @@ impl FileMovement {
         profiles: &Profiles,
     ) -> bool {
         match destination_type {
-            Some("local") => true,     // Local doesn't need profile validation
-            Some("not_moved") => true, // not_moved doesn't need profile validation
+            Some("local") | Some("not_moved") => true,
             _ => {
                 if let Some(name) = profile_name {
-                    crate::commands::profile::test_profile_internal(name, profiles).await
+                    test_profile_internal(name, profiles).await
                 } else {
-                    false // Non-local types need profiles
+                    false
                 }
             }
         }
@@ -80,7 +85,7 @@ impl FileMovement {
         original_location: &str,
         destination: &Destination,
         profiles: &Profiles,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<()> {
         let filename =
             Self::generate_filename(original_location, false, destination.format.as_deref());
 
@@ -104,7 +109,7 @@ impl FileMovement {
         original_location: &str,
         quarantine: &Quarantine,
         profiles: &Profiles,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<()> {
         let filename =
             Self::generate_filename(original_location, true, quarantine.format.as_deref());
 
@@ -135,16 +140,13 @@ impl FileMovement {
         data: &[u8],
         config: &Source,
         profiles: &Profiles,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<()> {
         match config.r#type.as_str() {
             "local" => {
                 let location = config.location.as_ref().unwrap();
-
-                // Create parent directory if it doesn't exist
                 if let Some(parent) = Path::new(location).parent() {
                     std::fs::create_dir_all(parent)?;
                 }
-
                 std::fs::write(location, data)?;
                 println!("📁 Wrote {} bytes to {}", data.len(), location);
                 Ok(())
@@ -153,28 +155,35 @@ impl FileMovement {
                 let profile_name = config.profile.as_ref().unwrap();
                 let profile = profiles
                     .get(profile_name)
-                    .ok_or_else(|| format!("Profile '{}' not found", profile_name))?;
+                    .ok_or_else(|| anyhow!("Profile '{}' not found", profile_name))?;
                 let location = config.location.as_ref().unwrap();
-
-                let url = url::Url::parse(location)?;
+                let url = Url::parse(location)?;
                 let connector = S3Connector::from_profile_and_url(profile, &url).await?;
                 connector.put_object_from_url(location, data).await?;
-
                 println!("📤 Wrote {} bytes to {}", data.len(), location);
                 Ok(())
             }
-
             "azure" => {
                 let profile_name = config.profile.as_ref().unwrap();
                 let profile = profiles
                     .get(profile_name)
-                    .ok_or_else(|| format!("Profile '{}' not found", profile_name))?;
+                    .ok_or_else(|| anyhow!("Profile '{}' not found", profile_name))?;
                 let location = config.location.as_ref().unwrap();
-
-                let url = url::Url::parse(location)?;
+                let url = Url::parse(location)?;
                 let connector = AzureConnector::from_profile_and_url(profile, &url).await?;
                 connector.put_object_from_url(location, data).await?;
-
+                println!("☁️ Wrote {} bytes to {}", data.len(), location);
+                Ok(())
+            }
+            "gcs" => {
+                let profile_name = config.profile.as_ref().unwrap();
+                let profile = profiles
+                    .get(profile_name)
+                    .ok_or_else(|| anyhow!("Profile '{}' not found", profile_name))?;
+                let location = config.location.as_ref().unwrap();
+                let url = Url::parse(location)?;
+                let connector = GCSConnector::from_profile_and_url(profile, &url).await?;
+                connector.put_object_from_url(location, data).await?;
                 println!("☁️ Wrote {} bytes to {}", data.len(), location);
                 Ok(())
             }
@@ -182,36 +191,29 @@ impl FileMovement {
                 println!("📄 Marked as not_moved, skipping write");
                 Ok(())
             }
-            _ => Err(format!("Unsupported type: {}", config.r#type).into()),
+            _ => bail!("Unsupported type: {}", config.r#type),
         }
     }
 
-    fn serialize_dataframe(
-        df: &DataFrame,
-        format: &str,
-    ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    fn serialize_dataframe(df: &DataFrame, format: &str) -> Result<Vec<u8>> {
         match format.to_lowercase().as_str() {
             "csv" => {
                 let mut buffer = Vec::new();
                 let mut cursor = Cursor::new(&mut buffer);
-
-                let mut df_clone = df.clone(); // Make mutable copy
+                let mut df_clone = df.clone();
                 CsvWriter::new(&mut cursor)
                     .include_header(true)
-                    .finish(&mut df_clone)?; // Pass mutable reference
-
+                    .finish(&mut df_clone)?;
                 Ok(buffer)
             }
             "parquet" => {
                 let mut buffer = Vec::new();
                 let mut cursor = Cursor::new(&mut buffer);
-
                 let mut df_clone = df.clone();
                 ParquetWriter::new(&mut cursor).finish(&mut df_clone)?;
-
                 Ok(buffer)
             }
-            _ => Err(format!("Unsupported output format: {}", format).into()),
+            _ => bail!("Unsupported output format: {}", format),
         }
     }
 }

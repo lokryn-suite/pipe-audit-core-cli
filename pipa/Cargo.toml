@@ -12,8 +12,7 @@ categories = ["development-tools::testing", "database"]
 [features]
 default = ["cli"]
 cli = ["dep:clap", "dep:tokio"]
-file-management = []
-dev-all = ["cli", "file-management"]
+dev-all = ["cli"]
 
 [dependencies]
 # Core Dependencies

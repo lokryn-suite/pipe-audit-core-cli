@@ -49,13 +49,20 @@ pub fn log_action(
     // Return PII-safe message based on event type
     match event {
         "contracts_listed" => "📋 Contracts listed".to_string(),
-        "contract_retrieved" => format!("📄 Contract '{}' retrieved", contract.unwrap_or("unknown")),
-        "contract_validated" => format!("✅ Contract '{}' validated", contract.unwrap_or("unknown")),
+        "contract_retrieved" => {
+            format!("📄 Contract '{}' retrieved", contract.unwrap_or("unknown"))
+        }
+        "contract_validated" => {
+            format!("✅ Contract '{}' validated", contract.unwrap_or("unknown"))
+        }
         "profiles_listed" => "👤 Profiles listed".to_string(),
         "profile_tested" => {
             if let Some(detail) = details {
                 if detail.contains("connected=true") {
-                    format!("✅ Profile '{}' connectivity verified", target.unwrap_or("unknown"))
+                    format!(
+                        "✅ Profile '{}' connectivity verified",
+                        target.unwrap_or("unknown")
+                    )
                 } else if detail.contains("exists=true") {
                     format!("❌ Profile '{}' test failed", target.unwrap_or("unknown"))
                 } else {
@@ -76,8 +83,14 @@ pub fn log_action(
                 "📊 Logs verified".to_string()
             }
         }
-        "contract_validation_started" => format!("🚀 Starting validation for '{}'", contract.unwrap_or("unknown")),
-        "contract_validation_completed" => format!("✅ Validation completed for '{}'", contract.unwrap_or("unknown")),
+        "contract_validation_started" => format!(
+            "🚀 Starting validation for '{}'",
+            contract.unwrap_or("unknown")
+        ),
+        "contract_validation_completed" => format!(
+            "✅ Validation completed for '{}'",
+            contract.unwrap_or("unknown")
+        ),
         "health_check" => "🏥 Health check completed".to_string(),
         _ => format!("📝 Action: {}", event),
     }

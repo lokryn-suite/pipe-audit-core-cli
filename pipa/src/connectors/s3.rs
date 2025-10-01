@@ -1,9 +1,9 @@
 use super::Connector;
 use crate::profiles::Profile;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use aws_config::BehaviorVersion;
-use aws_sdk_s3::config::Credentials;
 use aws_sdk_s3::Client as S3Client;
+use aws_sdk_s3::config::Credentials;
 use std::io::{Cursor, Read};
 
 pub struct S3Connector {
@@ -16,7 +16,7 @@ impl S3Connector {
         // Expect s3://bucket/key style URLs
         let bucket = url
             .host_str()
-            .ok_or_else(|| anyhow::anyhow!("Invalid S3 URL: missing bucket name"))?
+            .ok_or_else(|| anyhow!("Invalid S3 URL: missing bucket name"))?
             .to_string();
 
         let region = profile
@@ -58,13 +58,11 @@ impl S3Connector {
         Ok(S3Connector { client, bucket })
     }
 
-    pub async fn put_object_from_url(
-        &self,
-        s3_url: &str,
-        data: &[u8],
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn put_object_from_url(&self, s3_url: &str, data: &[u8]) -> Result<()> {
         let url = url::Url::parse(s3_url)?;
-        let bucket = url.host_str().ok_or("Invalid S3 URL: missing bucket")?;
+        let bucket = url
+            .host_str()
+            .ok_or_else(|| anyhow!("Invalid S3 URL: missing bucket"))?;
         let key = url.path().trim_start_matches('/');
 
         use aws_sdk_s3::primitives::ByteStream;
@@ -75,7 +73,8 @@ impl S3Connector {
             .key(key)
             .body(ByteStream::from(data.to_vec()))
             .send()
-            .await?;
+            .await
+            .context("Failed to upload S3 object")?;
 
         Ok(())
     }

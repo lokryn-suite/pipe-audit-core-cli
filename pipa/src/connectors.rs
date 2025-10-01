@@ -16,12 +16,14 @@ pub trait Connector: Send + Sync {
 
 // bring in each connector implementation
 pub mod azure;
+pub mod fetch;
 pub mod gcs;
 pub mod local;
 pub mod s3;
 pub mod sftp;
 
 pub use azure::AzureConnector;
+pub use fetch::fetch_data_from_source;
 pub use gcs::GCSConnector;
 pub use local::LocalConnector;
 pub use s3::S3Connector;

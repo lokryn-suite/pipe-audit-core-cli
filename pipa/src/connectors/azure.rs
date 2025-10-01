@@ -1,6 +1,6 @@
 use crate::connectors::Connector;
 use crate::profiles::Profile;
-use anyhow::Result;
+use anyhow::{Result, anyhow, bail};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
@@ -20,7 +20,7 @@ impl AzureConnector {
         let connection_string = profile
             .connection_string
             .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("Azure profile missing connection_string"))?;
+            .ok_or_else(|| anyhow!("Azure profile missing connection_string"))?;
 
         let (account_name, account_key) = Self::parse_connection_string(connection_string)?;
 
@@ -45,11 +45,10 @@ impl AzureConnector {
 
         match (account_name, account_key) {
             (Some(name), Some(key)) => Ok((name, key)),
-            _ => Err(anyhow::anyhow!("Invalid connection string format")),
+            _ => bail!("Invalid connection string format"),
         }
     }
 
-    // Use the working authentication format from profile test
     fn create_auth_header(
         &self,
         method: &str,
@@ -59,18 +58,14 @@ impl AzureConnector {
         let parsed_url = Url::parse(url)?;
         let date = Utc::now().format("%a, %d %b %Y %H:%M:%S GMT").to_string();
 
-        // Build canonicalized resource - just the path
         let resource = format!("/{}{}", self.account_name, parsed_url.path());
 
-        // Use the same simple format that worked in profile test
         let string_to_sign = if method == "GET" {
-            // For GET requests (like in profile test)
             format!(
                 "{}\n\n\n\n\n\n\n\n\n\n\n\nx-ms-date:{}\nx-ms-version:2020-04-08\n{}",
                 method, date, resource
             )
         } else {
-            // For PUT requests
             format!(
                 "{}\n\n\n{}\n\n\n\n\n\n\n\n\nx-ms-date:{}\nx-ms-version:2020-04-08\n{}",
                 method, content_length, date, resource
@@ -102,13 +97,9 @@ impl AzureConnector {
             .await?;
 
         if !response.status().is_success() {
-            let status = response.status(); // Capture status before consuming response
+            let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            return Err(anyhow::anyhow!(
-                "Failed to upload blob: {} - {}",
-                status,
-                error_text
-            ));
+            bail!("Failed to upload blob: {} - {}", status, error_text);
         }
 
         Ok(())
@@ -122,7 +113,6 @@ impl Connector for AzureConnector {
     }
 
     async fn list(&self, _prefix: &str) -> Result<Vec<String>> {
-        // Return empty for now - implement if needed
         Ok(vec![])
     }
 
@@ -142,13 +132,9 @@ impl Connector for AzureConnector {
             let data = response.bytes().await?;
             Ok(Box::new(std::io::Cursor::new(data.to_vec())))
         } else {
-            let status = response.status(); // Capture status before consuming response
+            let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
-            Err(anyhow::anyhow!(
-                "Failed to fetch blob: {} - {}",
-                status,
-                error_text
-            ))
+            bail!("Failed to fetch blob: {} - {}", status, error_text);
         }
     }
 }

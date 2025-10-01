@@ -1,7 +1,7 @@
-use crate::engine::run_contract_validation;
 use crate::logging::schema::Executor;
 use glob::glob;
 use hostname;
+use pipa::engine::contracts::run_contract_validation;
 use std::path::Path;
 use whoami;
 
@@ -28,7 +28,10 @@ pub async fn run_all() {
                     Ok((outcome, message)) => {
                         println!("{}", message);
                         if !outcome.passed {
-                            eprintln!("⚠️  Validation completed with failures for {}", contract_name);
+                            eprintln!(
+                                "⚠️  Validation completed with failures for {}",
+                                contract_name
+                            );
                         }
                     }
                     Err(_) => {
@@ -67,12 +70,18 @@ pub async fn run_single(contract_name: &str) {
         Ok((outcome, message)) => {
             println!("{}", message);
             if !outcome.passed {
-                eprintln!("⚠️  Validation completed with {} failures out of {} checks", 
-                         outcome.fail_count, outcome.pass_count + outcome.fail_count);
+                eprintln!(
+                    "⚠️  Validation completed with {} failures out of {} checks",
+                    outcome.fail_count,
+                    outcome.pass_count + outcome.fail_count
+                );
             }
         }
         Err(_) => {
-            eprintln!("❌ Validation failed for {}. Check logs for details.", contract_name);
+            eprintln!(
+                "❌ Validation failed for {}. Check logs for details.",
+                contract_name
+            );
         }
     }
 }

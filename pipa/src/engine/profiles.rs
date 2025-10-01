@@ -1,7 +1,7 @@
 //! Profile management functions for the engine
 
-use crate::profiles::{load_profiles, Profile, Profiles};
 use crate::engine::log_action;
+use crate::profiles::{Profile, Profiles, load_profiles};
 
 /// Result of listing profiles
 pub struct ProfileList {
@@ -21,7 +21,12 @@ pub fn list_profiles() -> Result<(ProfileList, String), String> {
         Ok(profiles) => {
             let profile_names: Vec<String> = profiles.keys().cloned().collect();
             let message = log_action("profiles_listed", None, None, None, None);
-            Ok((ProfileList { profiles: profile_names }, message))
+            Ok((
+                ProfileList {
+                    profiles: profile_names,
+                },
+                message,
+            ))
         }
         Err(_) => Err("Failed to load profiles".to_string()),
     }
@@ -32,36 +37,63 @@ pub async fn test_profile(profile_name: &str) -> (ProfileTestResult, String) {
     let profiles = match load_profiles() {
         Ok(p) => p,
         Err(_) => {
-            let message = log_action("profile_tested", Some("exists=false, testable=false, connected=false"), None, None, Some(profile_name));
-            return (ProfileTestResult {
-                exists: false,
-                testable: false,
-                connected: false,
-            }, message);
+            let message = log_action(
+                "profile_tested",
+                Some("exists=false, testable=false, connected=false"),
+                None,
+                None,
+                Some(profile_name),
+            );
+            return (
+                ProfileTestResult {
+                    exists: false,
+                    testable: false,
+                    connected: false,
+                },
+                message,
+            );
         }
     };
 
     if let Some(_profile) = profiles.get(profile_name) {
         let connected = test_profile_internal(profile_name, &profiles).await;
         let details = format!("exists=true, testable=true, connected={}", connected);
-        let message = log_action("profile_tested", Some(&details), None, None, Some(profile_name));
-        (ProfileTestResult {
-            exists: true,
-            testable: true,
-            connected,
-        }, message)
+        let message = log_action(
+            "profile_tested",
+            Some(&details),
+            None,
+            None,
+            Some(profile_name),
+        );
+        (
+            ProfileTestResult {
+                exists: true,
+                testable: true,
+                connected,
+            },
+            message,
+        )
     } else {
-        let message = log_action("profile_tested", Some("exists=false, testable=false, connected=false"), None, None, Some(profile_name));
-        (ProfileTestResult {
-            exists: false,
-            testable: false,
-            connected: false,
-        }, message)
+        let message = log_action(
+            "profile_tested",
+            Some("exists=false, testable=false, connected=false"),
+            None,
+            None,
+            Some(profile_name),
+        );
+        (
+            ProfileTestResult {
+                exists: false,
+                testable: false,
+                connected: false,
+            },
+            message,
+        )
     }
 }
 
 // Extracted for reuse - test profile connectivity
-async fn test_profile_internal(profile_name: &str, profiles: &Profiles) -> bool {
+pub async fn test_profile_internal(profile_name: &str, profiles: &Profiles) -> bool {
     if let Some(profile) = profiles.get(profile_name) {
         match profile.provider.as_str() {
             "s3" => test_s3_profile_internal(profile).await,
@@ -165,7 +197,7 @@ async fn test_gcs_service_account(service_account_json: &str) -> bool {
     //     "Debug: GCS service account JSON first 100 chars: {}",
     //     &service_account_json.chars().take(100).collect::<String>()
     // );
-    use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+    use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
     use serde_json::json;
 
     let (project_id, client_email, private_key) =

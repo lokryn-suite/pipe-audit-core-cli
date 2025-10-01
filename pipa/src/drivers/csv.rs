@@ -3,8 +3,8 @@
 use super::Driver;
 use anyhow::Result;
 use polars::prelude::*;
-use polars_io::prelude::CsvReadOptions; // Use the direct import
 use polars_io::SerReader;
+use polars_io::prelude::CsvReadOptions; // Use the direct import
 use std::io::Cursor;
 
 pub struct CsvDriver;

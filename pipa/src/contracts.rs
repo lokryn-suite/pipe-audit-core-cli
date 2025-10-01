@@ -6,5 +6,5 @@ pub mod types;
 
 pub use compound::CompoundUnique;
 pub use file::FileContracts;
-pub use schema::{load_contract_for_file, SchemaContracts};
+pub use schema::{SchemaContracts, load_contract_for_file};
 pub use types::ContractType;

@@ -1,7 +1,7 @@
 //! Log verification functions for the engine
 
-use crate::logging::verify::{verify_date, verify_all, FileVerification};
 use crate::engine::log_action;
+use crate::logging::verify::{FileVerification, verify_all, verify_date};
 
 /// Result of log verification
 pub struct LogVerification {
@@ -27,18 +27,28 @@ pub fn verify_logs(date: Option<&str>) -> (LogVerification, String) {
         && summary.malformed == 0
         && summary.unsealed == 0;
 
-    let details = format!("valid={}, verified={}, mismatched={}, missing={}, malformed={}, unsealed={}",
-        all_valid, summary.verified, summary.mismatched, summary.missing, summary.malformed, summary.unsealed);
+    let details = format!(
+        "valid={}, verified={}, mismatched={}, missing={}, malformed={}, unsealed={}",
+        all_valid,
+        summary.verified,
+        summary.mismatched,
+        summary.missing,
+        summary.malformed,
+        summary.unsealed
+    );
 
     let message = log_action("logs_verified", Some(&details), None, None, None);
 
-    (LogVerification {
-        valid: all_valid,
-        verified: summary.verified,
-        mismatched: summary.mismatched,
-        missing: summary.missing,
-        malformed: summary.malformed,
-        unsealed: summary.unsealed,
-        files: summary.files,
-    }, message)
+    (
+        LogVerification {
+            valid: all_valid,
+            verified: summary.verified,
+            mismatched: summary.mismatched,
+            missing: summary.missing,
+            malformed: summary.malformed,
+            unsealed: summary.unsealed,
+            files: summary.files,
+        },
+        message,
+    )
 }
