@@ -6,12 +6,11 @@ authors = ["Daniel Wallace"]
 description = "Command-line interface for the pipa audit engine"
 repository = "https://github.com/lokryn-suite/pipe-audit-core-cli"
 license = "GPL-3.0-or-later"
-license-file = "../LICENSES/GPL-3.0.txt"
 keywords = ["cli", "audit", "compliance", "data-quality"]
 
 [dependencies]
 # Pull in the core engine from the sibling crate
-pipa-core = { path = "../pipa-core" }
+pipa-core = "0.1.2"
 
 # CLI-specific dependencies
 clap = { version = "4.5.48", features = ["derive"] }
