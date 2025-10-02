@@ -1,76 +1,28 @@
 [package]
-name = "pipa"
-version = "0.1.1"
+name = "pipa-cli"
+version = "0.1.0"
+edition = "2021"
 authors = ["Daniel Wallace"]
-edition = "2024"
-description = "Universal data validation and compliance audit engine"
+description = "Command-line interface for the pipa audit engine"
 repository = "https://github.com/developers/lokryn-pipeaudit-core"
 license = "MIT OR Apache-2.0"
-keywords = ["data", "validation", "quality", "testing", "compliance"]
-categories = ["development-tools::testing", "database"]
-
-[features]
-default = ["cli"]
-cli = ["dep:clap", "dep:tokio"]
-dev-all = ["cli"]
+keywords = ["cli", "audit", "compliance", "data-quality"]
 
 [dependencies]
-# Core Dependencies
-chrono = "0.4.42"
+# Pull in the core engine from the sibling crate
+pipa = { path = "../pipa" }
+
+# CLI-specific dependencies
+clap = { version = "4.5.48", features = ["derive"] }
+tokio = { version = "1.47.1", features = ["full"] }
+whoami = "1.6.1"
+hostname = "0.4.1"
 dotenv = "0.15"
 glob = "0.3.3"
-hostname = "0.4.1"
-polars = { version = "0.51.0", features = [
-    "csv",
-    "parquet",
-    "is_in",
-    "strings",
-    "abs",
-    "lazy"
-]}
-polars-ops = "0.51.0"
-polars-io = "0.51.0"
-toml = "0.9.7"
-regex = "1.11.2"
-serde = { version = "1.0.226", features = ["derive"] }
-serde_json = "1.0.145"
-url = "2.4.0"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "json", "time"] }
-whoami = "1.6.1"
-anyhow = "1.0.100"
-thiserror = "1.0"
-once_cell = "1.19"
-
-# Encryption
-sha2 = "0.10.9"
-aes-gcm = "0.10"
-rand = "0.8"
-
-# Storage Connectors
-aws-config = "1.1.7"
-aws-sdk-s3 = "1.17.0"
-hmac = "0.12"
-base64 = "0.22"
-futures = "0.3"
-reqwest = { version = "0.12", features = ["json"] }
-jsonwebtoken = "9.3.1"
-
-async-trait = "0.1.74"
-
-# CLI Dependencies
-clap = { version = "4.5.48", features = ["derive"], optional = true }
-tokio = { version = "1.47.1", features = ["full"], optional = true }
-urlencoding = "2.1.3"
 
 [dev-dependencies]
-tempfile = "3.8"
 pretty_assertions = "1.4"
 
-[lib]
+[[bin]]
 name = "pipa"
-path = "src/lib.rs"
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+path = "src/main.rs"
