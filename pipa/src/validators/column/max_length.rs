@@ -43,3 +43,58 @@ impl Validator for MaxLengthValidator {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_str_df(values: &[Option<&str>]) -> DataFrame {
+        let s = Series::new("col".into(), values.to_vec());
+        DataFrame::new(vec![s.into()]).unwrap()
+    }
+
+    #[test]
+    fn passes_when_all_values_within_limit() {
+        let df = make_str_df(&[Some("a"), Some("bb"), Some("ccc")]);
+        let validator = MaxLengthValidator { value: 3 };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "pass");
+        assert!(report.details.is_none());
+    }
+
+    #[test]
+    fn fails_when_values_exceed_limit() {
+        let df = make_str_df(&[Some("abcd"), Some("bb"), Some("ccc")]);
+        let validator = MaxLengthValidator { value: 3 };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "fail");
+        assert!(report.details.unwrap().contains("bad_count=1"));
+    }
+
+    #[test]
+    fn ignores_null_values() {
+        let df = make_str_df(&[Some("ok"), None, Some("fine")]);
+        let validator = MaxLengthValidator { value: 4 };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "pass");
+    }
+
+    #[test]
+    fn passes_on_empty_column() {
+        let s: Series = Series::new("col".into(), Vec::<Option<&str>>::new());
+        let df = DataFrame::new(vec![s.into()]).unwrap();
+        let validator = MaxLengthValidator { value: 5 };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "pass");
+    }
+
+    #[test]
+    fn skips_on_non_string_column() {
+        let s = Series::new("col".into(), &[1, 2, 3]);
+        let df = DataFrame::new(vec![s.into()]).unwrap();
+        let validator = MaxLengthValidator { value: 2 };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "skipped");
+        assert!(report.details.unwrap().contains("not a string"));
+    }
+}

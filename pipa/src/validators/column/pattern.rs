@@ -49,3 +49,73 @@ impl Validator for PatternValidator {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_str_df(values: &[Option<&str>]) -> DataFrame {
+        let s = Series::new("col".into(), values.to_vec());
+        DataFrame::new(vec![s.into()]).unwrap()
+    }
+
+    fn make_int_df(values: &[i32]) -> DataFrame {
+        let s = Series::new("col".into(), values.to_vec());
+        DataFrame::new(vec![s.into()]).unwrap()
+    }
+
+    #[test]
+    fn passes_when_all_values_match_pattern() {
+        let df = make_str_df(&[Some("abc"), Some("abd"), Some("abe")]);
+        let validator = PatternValidator {
+            pattern: r"^ab.$".to_string(),
+        };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "pass");
+        assert!(report.details.is_none());
+    }
+
+    #[test]
+    fn fails_when_some_values_do_not_match_pattern() {
+        let df = make_str_df(&[Some("abc"), Some("xyz"), Some("abd")]);
+        let validator = PatternValidator {
+            pattern: r"^ab.$".to_string(),
+        };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "fail");
+        assert!(report.details.unwrap().contains("bad_count=1"));
+    }
+
+    #[test]
+    fn ignores_null_values() {
+        let df = make_str_df(&[Some("abc"), None, Some("abd")]);
+        let validator = PatternValidator {
+            pattern: r"^ab.$".to_string(),
+        };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "pass");
+    }
+
+    #[test]
+    fn passes_on_empty_column() {
+        let s: Series = Series::new("col".into(), Vec::<Option<&str>>::new());
+        let df = DataFrame::new(vec![s.into()]).unwrap();
+        let validator = PatternValidator {
+            pattern: r"^ab.$".to_string(),
+        };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "pass");
+    }
+
+    #[test]
+    fn skips_on_non_string_column() {
+        let df = make_int_df(&[1, 2, 3]);
+        let validator = PatternValidator {
+            pattern: r"^ab.$".to_string(),
+        };
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "skipped");
+        assert!(report.details.unwrap().contains("not a string"));
+    }
+}
+
