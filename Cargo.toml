@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "pipa",
-    "pipa-cli"
+    "pipa-core",
+    "pipa"
 ]
 
 resolver ="3"
