@@ -6,7 +6,7 @@ edition = "2024"
 description = "Universal data validation and compliance audit engine"
 repository = "https://github.com/lokryn-suite/pipe-audit-core-cli"
 license = "MPL-2.0"
-license-file = "../LICENSES/MPL-2.0.txt"
+readme = "../README.md"
 keywords = ["data", "validation", "quality", "testing", "compliance"]
 categories = ["development-tools::testing", "database"]
 

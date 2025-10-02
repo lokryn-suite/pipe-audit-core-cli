@@ -2669,7 +2669,21 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pipa"
-version = "0.1.1"
+version = "0.1.2"
+dependencies = [
+ "clap",
+ "dotenv",
+ "glob",
+ "hostname",
+ "pipa-core",
+ "pretty_assertions",
+ "tokio",
+ "whoami",
+]
+
+[[package]]
+name = "pipa-core"
+version = "0.1.2"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -2704,20 +2718,6 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "urlencoding",
- "whoami",
-]
-
-[[package]]
-name = "pipa-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "dotenv",
- "glob",
- "hostname",
- "pipa",
- "pretty_assertions",
- "tokio",
  "whoami",
 ]
 
