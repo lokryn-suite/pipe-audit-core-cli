@@ -1,24 +1,24 @@
-// pipeaudit-core/src/main.rs
+use clap::Parser;              // CLI argument parsing
+use pipa::contract;            // Public API surface (contracts)
+use pipa::profile;             // Public API surface (profiles)
+use pipa::run;                 // Public API surface (runner)
+use pipa::logs;                // Public API surface (logs)
+use pipa::health;              // Public API surface (health checks)
+use pipa::init;                // Public API surface (project init)
 
-use clap::Parser;
-use pipa::contract;
-use pipa::profile;
-use pipa::run;
-use pipa::logs;
-use pipa::health;
-use pipa::init;
-
-mod cli;
-mod commands;
+mod cli;                       // Local CLI definitions (structs/enums)
+mod commands;                  // Local command implementations
 
 use cli::{Cli, Commands, ContractCommands, LogsCommands, ProfileCommands};
 
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
-    logging::init_logging();
+    
+    dotenv::dotenv().ok();         // Load environment variables from .env
+    logging::init_logging();       // Initialize logging system
+    let cli = Cli::parse();        // Parse CLI args into `Cli` struct
 
-    let cli = Cli::parse();
 
     match cli.command {
         Some(Commands::Run { contract, all }) => {

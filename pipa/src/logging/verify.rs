@@ -7,16 +7,17 @@ use crate::logging::ledger::{compute_sha256, read_ledger_plaintext};
 pub struct FileVerification {
     pub filename: String,
     pub status: FileStatus,
-    pub stored_hash: Option<String>,
-    pub computed_hash: Option<String>,
+    pub stored_hash: Option<String>,   // hash recorded in ledger
+    pub computed_hash: Option<String>, // hash recomputed from file
 }
 
+/// Possible verification outcomes for a file
 pub enum FileStatus {
-    Verified,
-    Mismatched,
-    Missing,
-    Malformed,
-    Unsealed,
+    Verified,   // file exists and hash matches ledger
+    Mismatched, // file exists but hash differs from ledger
+    Missing,    // file referenced in ledger but missing on disk
+    Malformed,  // ledger entry malformed (not enough fields)
+    Unsealed,   // file exists but not present in ledger
 }
 
 /// Aggregated summary across all files checked
@@ -26,7 +27,7 @@ pub struct VerificationSummary {
     pub missing: usize,
     pub malformed: usize,
     pub unsealed: usize,
-    pub files: Vec<FileVerification>,
+    pub files: Vec<FileVerification>, // per-file results
 }
 
 /// Verify all sealed logs in the ledger
@@ -117,6 +118,7 @@ pub fn verify_date(date: Option<&str>) -> VerificationSummary {
         return summary;
     }
 
+    // Pick target date: explicit or yesterday
     let target_date = match date {
         Some(d) => match NaiveDate::parse_from_str(d, "%Y-%m-%d") {
             Ok(date) => date.format("%Y-%m-%d").to_string(),
@@ -137,6 +139,7 @@ pub fn verify_date(date: Option<&str>) -> VerificationSummary {
     }
     let ledger_str = String::from_utf8_lossy(&ledger_plaintext);
 
+    // File missing entirely
     if !log_path.exists() {
         summary.missing += 1;
         summary.files.push(FileVerification {
@@ -148,6 +151,7 @@ pub fn verify_date(date: Option<&str>) -> VerificationSummary {
         return summary;
     }
 
+    // File exists, check if sealed in ledger
     if let Some(line) = ledger_str.lines().find(|l| l.contains(&log_filename)) {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 3 {
@@ -181,6 +185,7 @@ pub fn verify_date(date: Option<&str>) -> VerificationSummary {
             });
         }
     } else {
+        // File exists but not sealed in ledger
         summary.unsealed += 1;
         summary.files.push(FileVerification {
             filename: log_filename,

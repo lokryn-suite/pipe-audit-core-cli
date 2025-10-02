@@ -1,29 +1,30 @@
 //! Contract metadata and syntax validation functions
 
-use crate::contracts::load_contract_for_file;
-use crate::engine::log_action;
-use glob;
+use crate::contracts::load_contract_for_file; // loads and parses TOML into SchemaContracts
+use crate::engine::log_action;                // audit logging hook
+use glob;                                     // filesystem globbing
 use std::path::Path;
 
 /// Result of listing contracts
 pub struct ContractList {
-    pub contracts: Vec<String>,
+    pub contracts: Vec<String>, // contract names (file stems)
 }
 
 /// Result of getting a contract
 pub struct ContractInfo {
-    pub name: String,
-    pub version: String,
-    pub exists: bool,
+    pub name: String,   // contract name
+    pub version: String,// version string from contract metadata
+    pub exists: bool,   // whether the contract file exists
 }
 
 /// Result of validating a contract
 pub struct ContractValidation {
-    pub valid: bool,
-    pub error: Option<String>,
+    pub valid: bool,          // true if contract parsed successfully
+    pub error: Option<String>,// error message if invalid
 }
 
-/// List all available contracts
+/// List all available contracts by scanning `contracts/*.toml`.
+/// Returns both the list and a log message.
 pub fn list_contracts() -> Result<(ContractList, String), String> {
     let contracts: Vec<String> = match glob::glob("contracts/*.toml") {
         Ok(paths) => paths
@@ -41,7 +42,8 @@ pub fn list_contracts() -> Result<(ContractList, String), String> {
     Ok((ContractList { contracts }, message))
 }
 
-/// Get information about a specific contract
+/// Get information about a specific contract.
+/// Returns metadata (name, version, exists) and a log message.
 pub fn get_contract(name: &str) -> (ContractInfo, String) {
     let contract_path = format!("contracts/{}.toml", name);
 
@@ -81,7 +83,9 @@ pub fn get_contract(name: &str) -> (ContractInfo, String) {
     )
 }
 
-/// Validate a contract's syntax and structure
+/// Validate a contract's syntax and structure.
+/// Attempts to parse the TOML file into a SchemaContracts.
+/// Returns validation result and a log message.
 pub fn validate_contract(name: &str) -> (ContractValidation, String) {
     let contract_path = format!("contracts/{}.toml", name);
 

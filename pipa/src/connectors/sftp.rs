@@ -2,9 +2,11 @@ use super::Connector;
 use anyhow::Result;
 use std::io::Read;
 
+#[allow(dead_code)]
 pub struct SftpConnector;
 
 impl SftpConnector {
+     #[allow(dead_code)]
     pub fn from_url(_url: &url::Url) -> Result<Self> {
         Ok(SftpConnector)
     }

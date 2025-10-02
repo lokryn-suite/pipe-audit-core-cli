@@ -6,7 +6,8 @@ use std::path::PathBuf;
 
 use crate::logging::schema::AuditLogEntry;
 
-/// Ensure logs/ exists
+/// Ensure `logs/` directory exists.
+/// Creates it if missing.
 fn ensure_logs_dir() -> PathBuf {
     let dir = PathBuf::from("logs");
     if !dir.exists() {
@@ -15,7 +16,8 @@ fn ensure_logs_dir() -> PathBuf {
     dir
 }
 
-/// Get today’s log file path (audit-YYYY-MM-DD.jsonl)
+/// Get today’s log file path in JSONL format.
+/// Example: `logs/audit-2025-10-01.jsonl`
 fn today_log_path() -> PathBuf {
     let logs_dir = ensure_logs_dir();
     let today = Utc::now().format("%Y-%m-%d").to_string();
@@ -23,11 +25,13 @@ fn today_log_path() -> PathBuf {
     logs_dir.join(log_filename)
 }
 
-/// Append an AuditLogEntry to today’s JSONL file
+/// Append an `AuditLogEntry` to today’s JSONL file.
+/// Each entry is serialized as one line of JSON.
 pub fn log_event(entry: &AuditLogEntry) {
     let log_path = today_log_path();
 
-    let json = serde_json::to_string(entry).expect("failed to serialize log entry");
+    let json = serde_json::to_string(entry)
+        .expect("failed to serialize log entry");
 
     let mut file = OpenOptions::new()
         .create(true)
@@ -35,10 +39,11 @@ pub fn log_event(entry: &AuditLogEntry) {
         .open(&log_path)
         .expect("cannot open daily audit log file");
 
-    writeln!(file, "{}", json).expect("failed to write log entry");
+    writeln!(file, "{}", json)
+        .expect("failed to write log entry");
 }
 
-/// Append an AuditLogEntry to JSONL *and* print a console message
+/// Append an `AuditLogEntry` to JSONL *and* print a console message.
 ///
 /// - `entry`: the structured audit log entry (full detail, sealed later)
 /// - `console_msg`: a curated, PII‑safe one‑liner for operator visibility
