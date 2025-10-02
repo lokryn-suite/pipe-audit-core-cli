@@ -1,5 +1,5 @@
 [package]
-name = "pipa-core"
+name = "pipe-audit-core"
 version = "0.1.2"
 authors = ["Daniel Wallace"]
 edition = "2024"

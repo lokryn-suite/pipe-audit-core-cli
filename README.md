@@ -1,10 +1,11 @@
 
-# Pipe Audit (pipa)
+
+# Pipe Audit
 
 **Universal data validation and compliance audit engine for structured data pipelines.**
 
-`pipa` helps **data engineers, developers, and technical managers** enforce reproducible, compliance‑grade validation without heavy setup.  
-Use it as a **Rust library** (`pipa-core`), a **standalone CLI** (`pipa`), or both.
+`pipe audit` helps **data engineers, developers, and technical managers** enforce reproducible, compliance‑grade validation without heavy setup.  
+Use it as a **Rust library** (`pipe-audit-core`), a **standalone CLI** (`pipe-audit` → installs the `pipa` binary), or both.
 
 ---
 
@@ -22,28 +23,32 @@ Use it as a **Rust library** (`pipa-core`), a **standalone CLI** (`pipa`), or bo
 Install the CLI globally (requires a recent Rust toolchain, edition 2024):
 
 ```bash
-cargo install pipa
+cargo install pipe-audit
 ```
 
-This provides the `pipa` binary.
+This provides the `pipa` binary:
+
+Examples: 
+
+```bash
+pipa init
+```
+
+```bash
+pipa run --all
+```
 
 ### Library
 If you want to embed the engine in your own Rust project, add the core library:
 
 ```toml
 [dependencies]
-pipa-core = "0.1"
+pipe-audit-core = "0.1"
 ```
 
 ---
 
 ## 🛠️ Quick Start (CLI)
-
-Initiate a project:
-
-```bash
-pipa init
-```
 
 Validate a contract:
 
@@ -76,7 +81,7 @@ pipa logs verify ./examples/logs/test.log
 ## 📦 Library Usage
 
 ```rust
-use pipa_core::engine::run_contract_validation;
+use pipe_audit_core::engine::run_contract_validation;
 
 fn main() {
     run_contract_validation("contracts/people.toml").unwrap();
@@ -87,17 +92,29 @@ fn main() {
 
 ## 📄 License
 
-- **`pipa-core`** (the library) is licensed under the **Mozilla Public License 2.0 (MPL‑2.0)**.  
-- **`pipa`** (the CLI) is licensed under the **GNU General Public License v3.0 or later (GPL‑3.0‑or‑later)**.  
+- **`pipe-audit-core`** (the library) is licensed under the **Mozilla Public License 2.0 (MPL‑2.0)**.  
+- **`pipe-audit`** (the CLI, installs as `pipa`) is licensed under the **GNU General Public License v3.0 or later (GPL‑3.0‑or‑later)**.  
 
 See the [`LICENSES/`](./LICENSES) directory for full texts.
+
+---
+
+## 📚 Documentation
+
+- Full documentation is in progress and will be published soon.  
+- Expect end‑to‑end examples, contributor onboarding guides, and API references.  
+
+---
+
+## 🌍 Project Status
+
+- The repository is currently private while we finalize structure and licensing.  
+- It will be made **public soon**, with contributor guidelines and full docs.  
 
 ---
 
 ## 🔮 Roadmap
 - Richer docs with end‑to‑end examples  
 - Expanded connectors (databases, streaming sources)  
-- Containerized API service built on `pipa-core`  
-
----
+- Containerized API service built on `pipe-audit-core`  
 

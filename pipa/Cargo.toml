@@ -1,5 +1,5 @@
 [package]
-name = "pipa"
+name = "pipe-audit"
 version = "0.1.2"
 edition = "2021"
 authors = ["Daniel Wallace"]
@@ -10,7 +10,7 @@ keywords = ["cli", "audit", "compliance", "data-quality"]
 
 [dependencies]
 # Pull in the core engine from the sibling crate
-pipa = { package = "pipa-core", version = "0.1.2" }
+pipa = { package = "pipe-audit-core", path = "../pipa-core" }
 
 # CLI-specific dependencies
 clap = { version = "4.5.48", features = ["derive"] }
