@@ -1,10 +1,15 @@
+use crate::logging::init::init_logging;
+use crate::logging::ledger::ensure_ledger_key_exists;
 use std::fs;
 use std::path::Path;
 
 pub fn init_project() -> Result<String, Box<dyn std::error::Error>> {
-    fs::create_dir_all("logs")?;
+    // Initialize logging system once at project init
+    init_logging();
+    ensure_ledger_key_exists();
     fs::create_dir_all("contracts")?;
 
+    // Write example profile.toml if it doesn't exist
     let profile_content = r#"# Pipe Audit profile.toml example
 # provider can be: "local", "s3", "azure", "gcs"
 name = "example-profile"
@@ -15,6 +20,7 @@ provider = "local"
         fs::write("profile.toml", profile_content)?;
     }
 
+    // Write example contract if it doesn't exist
     let contract_content = r#"# contracts/example.toml
 [contract]
 name = "example-contract"

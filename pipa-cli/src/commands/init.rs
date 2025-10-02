@@ -1,4 +1,4 @@
-use pipa::init::init_project;
+use pipa::init::init_project as lib_init_project;
 
 /// Initialize a new project in the current directory.
 ///
@@ -10,8 +10,8 @@ use pipa::init::init_project;
 /// ```bash
 /// pipa init
 /// ```
-pub async fn init_project() {
-    match init_project() {
+pub fn init_project() {
+    match lib_init_project() {
         Ok(msg) => println!("{}", msg),
         Err(e) => eprintln!("❌ {}", e),
     }

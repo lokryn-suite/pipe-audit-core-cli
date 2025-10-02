@@ -1,24 +1,14 @@
-use clap::Parser;              // CLI argument parsing
-use pipa::contract;            // Public API surface (contracts)
-use pipa::profile;             // Public API surface (profiles)
-use pipa::run;                 // Public API surface (runner)
-use pipa::logs;                // Public API surface (logs)
-use pipa::health;              // Public API surface (health checks)
-use pipa::init;                // Public API surface (project init)
+use clap::Parser; // CLI argument parsing
 
-mod cli;                       // Local CLI definitions (structs/enums)
-mod commands;                  // Local command implementations
+mod cli; // Local CLI definitions (structs/enums)
+mod commands; // Local command implementations
 
 use cli::{Cli, Commands, ContractCommands, LogsCommands, ProfileCommands};
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    
-    dotenv::dotenv().ok();         // Load environment variables from .env
-    logging::init_logging();       // Initialize logging system
-    let cli = Cli::parse();        // Parse CLI args into `Cli` struct
-
+    dotenv::dotenv().ok(); // Load environment variables from .env
+    let cli = Cli::parse(); // Parse CLI args into `Cli` struct
 
     match cli.command {
         Some(Commands::Run { contract, all }) => {
@@ -53,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 commands::logs::verify(date.as_deref(), all).await;
             }
         },
-        Some(Commands::Init) => commands::init::init_project().await,
+        Some(Commands::Init) => commands::init::init_project(),
         None => {
             println!("No command specified. Use --help for usage information.");
         }

@@ -1,16 +1,9 @@
 use anyhow::Result;
 use std::io::Read;
 
-use crate::contracts::schema::Source;
-use crate::profiles::Profiles;
-
 /// Common interface for all connectors
 #[async_trait::async_trait]
 pub trait Connector: Send + Sync {
-    fn scheme(&self) -> &'static str;
-
-    async fn list(&self, prefix: &str) -> Result<Vec<String>>;
-
     async fn fetch(&self, source: &str) -> Result<Box<dyn Read>>;
 }
 
@@ -24,6 +17,5 @@ pub mod sftp;
 
 pub use azure::AzureConnector;
 pub use gcs::GCSConnector;
+pub use local::LocalConnector;
 pub use s3::S3Connector;
-
-

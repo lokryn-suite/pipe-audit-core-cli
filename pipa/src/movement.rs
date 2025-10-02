@@ -1,18 +1,47 @@
-use crate::connectors::{S3Connector, AzureConnector, GCSConnector};
+//! File movement orchestration.
+//!
+//! This module handles writing validated data to its final destination
+//! (success path) or to quarantine (failure path). It supports multiple
+//! backends (local filesystem, S3, Azure, GCS) and integrates with
+//! configured profiles for authentication.
+//!
+//! Responsibilities:
+//! - Validate profile connectivity before movement.
+//! - Generate unique filenames with timestamps (and quarantine suffix).
+//! - Serialize Polars DataFrames into CSV or Parquet.
+//! - Write data via the appropriate connector.
+//!
+//! ## Supported types
+//! - `"local"`: local filesystem
+//! - `"s3"`: Amazon S3
+//! - `"azure"`: Azure Blob Storage
+//! - `"gcs"`: Google Cloud Storage
+//! - `"not_moved"`: skip movement
+//!
+//! ## Usage
+//! - Call `FileMovement::write_success_data` after validation passes.
+//! - Call `FileMovement::write_quarantine_data` after validation fails.
+//! - Use `FileMovement::validate_profiles` to pre‑check connectivity.
+
+use crate::connectors::{AzureConnector, GCSConnector, S3Connector};
 use crate::contracts::schema::{Destination, Quarantine, Source};
 use crate::engine::profiles::test_profile_internal;
 use crate::profiles::Profiles;
 use anyhow::{Result, anyhow, bail};
 use chrono::Utc;
-use polars::prelude::{DataFrame, CsvWriter, ParquetWriter};
+use polars::prelude::{CsvWriter, DataFrame, ParquetWriter};
 use polars_io::SerWriter;
 use std::io::Cursor;
 use std::path::Path;
 use url::Url;
 
+/// File movement orchestrator.
 pub struct FileMovement;
 
 impl FileMovement {
+    /// Validate connectivity for source, destination, and quarantine profiles.
+    ///
+    /// Returns a tuple of booleans: `(source_valid, dest_valid, quarantine_valid)`.
     pub async fn validate_profiles(
         source: Option<&Source>,
         destination: Option<&Destination>,
@@ -43,6 +72,7 @@ impl FileMovement {
         (source_valid, dest_valid, quarantine_valid)
     }
 
+    /// Internal helper: test connectivity for a given profile/type.
     async fn test_profile_connectivity(
         profile_name: Option<&String>,
         destination_type: Option<&str>,
@@ -60,6 +90,7 @@ impl FileMovement {
         }
     }
 
+    /// Generate a unique filename with timestamp and optional quarantine suffix.
     fn generate_filename(
         original_location: &str,
         is_quarantine: bool,
@@ -80,6 +111,7 @@ impl FileMovement {
         }
     }
 
+    /// Write validated data to the configured **destination**.
     pub async fn write_success_data(
         df: &DataFrame,
         original_location: &str,
@@ -88,7 +120,6 @@ impl FileMovement {
     ) -> Result<()> {
         let filename =
             Self::generate_filename(original_location, false, destination.format.as_deref());
-
         let format = destination.format.as_deref().unwrap_or("csv");
         let data = Self::serialize_dataframe(df, format)?;
 
@@ -104,6 +135,7 @@ impl FileMovement {
         Self::write_data_via_connector(&data, &write_config, profiles).await
     }
 
+    /// Write failed data to the configured **quarantine**.
     pub async fn write_quarantine_data(
         df: &DataFrame,
         original_location: &str,
@@ -112,7 +144,6 @@ impl FileMovement {
     ) -> Result<()> {
         let filename =
             Self::generate_filename(original_location, true, quarantine.format.as_deref());
-
         let format = quarantine.format.as_deref().unwrap_or("csv");
         let data = Self::serialize_dataframe(df, format)?;
 
@@ -128,6 +159,7 @@ impl FileMovement {
         Self::write_data_via_connector(&data, &write_config, profiles).await
     }
 
+    /// Build a full destination path by appending filename to base location.
     fn build_destination_path(base_location: &str, filename: &str) -> String {
         if base_location.ends_with('/') {
             format!("{}{}", base_location, filename)
@@ -136,6 +168,7 @@ impl FileMovement {
         }
     }
 
+    /// Write serialized data to the configured backend.
     async fn write_data_via_connector(
         data: &[u8],
         config: &Source,
@@ -194,7 +227,7 @@ impl FileMovement {
             _ => bail!("Unsupported type: {}", config.r#type),
         }
     }
-
+    /// Serialize a DataFrame into the requested format (CSV or Parquet).
     fn serialize_dataframe(df: &DataFrame, format: &str) -> Result<Vec<u8>> {
         match format.to_lowercase().as_str() {
             "csv" => {

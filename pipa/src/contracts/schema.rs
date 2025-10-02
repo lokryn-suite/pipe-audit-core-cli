@@ -4,7 +4,7 @@ use std::path::Path;
 use super::{column::ColumnContracts, compound::CompoundUnique, file::FileContracts};
 
 /// High-level metadata about a contract.
-/// 
+///
 /// - `name` and `version` identify the contract.
 /// - `tags` can be used for grouping or filtering, but are currently unused.
 #[derive(Debug, Deserialize)]
@@ -16,7 +16,7 @@ pub struct Contract {
 }
 
 /// Input source definition for a contract.
-/// 
+///
 /// - `type`: connector type (e.g., "s3", "local").
 /// - `location`: path/URI to the data.
 /// - `profile`: optional profile name for credentials/config.
@@ -29,7 +29,7 @@ pub struct Source {
 }
 
 /// Output destination definition.
-/// 
+///
 /// Similar to `Source`, but may include a `format` override
 /// (e.g., force output as CSV even if input was Parquet).
 #[derive(Debug, Deserialize, Clone)]
@@ -42,7 +42,7 @@ pub struct Destination {
 }
 
 /// Quarantine sink definition.
-/// 
+///
 /// Used to redirect invalid rows/files. Mirrors `Destination`
 /// but semantically distinct.
 #[derive(Debug, Deserialize, Clone)]
@@ -55,7 +55,7 @@ pub struct Quarantine {
 }
 
 /// The full schema contract definition.
-/// 
+///
 /// This is the top-level structure deserialized from a TOML file.
 /// It aggregates all contract components:
 /// - `contract`: metadata
@@ -70,8 +70,8 @@ pub struct SchemaContracts {
     pub columns: Vec<ColumnContracts>,
     pub compound_unique: Option<Vec<CompoundUnique>>,
     pub source: Option<Source>,
-    pub destination: Option<Destination>, 
-    pub quarantine: Option<Quarantine>,   
+    pub destination: Option<Destination>,
+    pub quarantine: Option<Quarantine>,
 }
 
 /// Load the TOML contract file that matches the data filename.

@@ -1,8 +1,8 @@
 //! Contract metadata and syntax validation functions
 
 use crate::contracts::load_contract_for_file; // loads and parses TOML into SchemaContracts
-use crate::engine::log_action;                // audit logging hook
-use glob;                                     // filesystem globbing
+use crate::engine::log_action; // audit logging hook
+use glob; // filesystem globbing
 use std::path::Path;
 
 /// Result of listing contracts
@@ -12,15 +12,15 @@ pub struct ContractList {
 
 /// Result of getting a contract
 pub struct ContractInfo {
-    pub name: String,   // contract name
-    pub version: String,// version string from contract metadata
-    pub exists: bool,   // whether the contract file exists
+    pub name: String,    // contract name
+    pub version: String, // version string from contract metadata
+    pub exists: bool,    // whether the contract file exists
 }
 
 /// Result of validating a contract
 pub struct ContractValidation {
-    pub valid: bool,          // true if contract parsed successfully
-    pub error: Option<String>,// error message if invalid
+    pub valid: bool,           // true if contract parsed successfully
+    pub error: Option<String>, // error message if invalid
 }
 
 /// List all available contracts by scanning `contracts/*.toml`.

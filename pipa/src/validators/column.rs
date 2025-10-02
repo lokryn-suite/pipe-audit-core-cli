@@ -18,7 +18,6 @@
 //!
 //! This keeps the system modular and contributor-friendly.
 
-
 // -----------------------------------------------------------------------------
 // Declare all individual column validator modules
 // -----------------------------------------------------------------------------

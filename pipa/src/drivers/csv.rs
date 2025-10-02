@@ -1,9 +1,9 @@
-use super::Driver;                // Trait that all drivers must implement
-use anyhow::Result;               // Standardized error handling
-use polars::prelude::*;           // Core Polars DataFrame types
-use polars_io::SerReader;         // Trait for finishing a reader into a DataFrame
+use super::Driver; // Trait that all drivers must implement
+use anyhow::Result; // Standardized error handling
+use polars::prelude::*; // Core Polars DataFrame types
+use polars_io::SerReader; // Trait for finishing a reader into a DataFrame
 use polars_io::prelude::CsvReadOptions; // Explicit import of CSV options
-use std::io::Cursor;              // Wraps &[u8] into a reader
+use std::io::Cursor; // Wraps &[u8] into a reader
 
 /// CSV file driver
 ///
@@ -27,9 +27,7 @@ impl Driver for CsvDriver {
         options.has_header = true;
 
         // Build a reader with options and finish into a DataFrame
-        let df = CsvReader::new(cursor)
-            .with_options(options)
-            .finish()?;
+        let df = CsvReader::new(cursor).with_options(options).finish()?;
 
         Ok(df)
     }

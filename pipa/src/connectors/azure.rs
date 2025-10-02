@@ -1,14 +1,32 @@
+//! Azure Blob Storage connector.
+//!
+//! Provides read/write access to Azure Blob Storage using the REST API
+//! and SharedKey authentication. Implements the generic `Connector`
+//! trait so it can be used interchangeably with other backends (S3, GCS, local).
+//!
+//! ## Responsibilities
+//! - Parse `connection_string` from a profile.
+//! - Generate SharedKey authorization headers.
+//! - Upload (`put_object_from_url`) and fetch (`fetch`) blobs.
+//!
+//! ## Profile fields used
+//! - `connection_string` (must contain `AccountName` and `AccountKey`).
+//!
+//! ## Expected URL format
+//! - `https://<account>.blob.core.windows.net/<container>/<blob>`
+
 use crate::connectors::Connector;
 use crate::profiles::Profile;
 use anyhow::{Result, anyhow, bail};
 use async_trait::async_trait;
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use chrono::Utc;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::io::Read;
 use url::Url;
 
+/// Concrete connector for Azure Blob Storage.
 pub struct AzureConnector {
     account_name: String,
     account_key: String,
@@ -16,6 +34,9 @@ pub struct AzureConnector {
 }
 
 impl AzureConnector {
+    /// Build an `AzureConnector` from a profile and URL.
+    ///
+    /// Expects `connection_string` in the profile.
     pub async fn from_profile_and_url(profile: &Profile, _url: &Url) -> Result<Self> {
         let connection_string = profile
             .connection_string
@@ -31,6 +52,7 @@ impl AzureConnector {
         })
     }
 
+    /// Parse `AccountName` and `AccountKey` from a connection string.
     fn parse_connection_string(connection_string: &str) -> Result<(String, String)> {
         let mut account_name = None;
         let mut account_key = None;
@@ -49,6 +71,9 @@ impl AzureConnector {
         }
     }
 
+    /// Create a SharedKey authorization header for Azure Blob Storage.
+    ///
+    /// Builds the canonical string to sign and computes the HMAC-SHA256 signature.
     fn create_auth_header(
         &self,
         method: &str,
@@ -60,6 +85,7 @@ impl AzureConnector {
 
         let resource = format!("/{}{}", self.account_name, parsed_url.path());
 
+        // Canonical string differs for GET vs PUT
         let string_to_sign = if method == "GET" {
             format!(
                 "{}\n\n\n\n\n\n\n\n\n\n\n\nx-ms-date:{}\nx-ms-version:2020-04-08\n{}",
@@ -72,6 +98,7 @@ impl AzureConnector {
             )
         };
 
+        // Decode account key and compute HMAC-SHA256 signature
         let key_bytes = general_purpose::STANDARD.decode(&self.account_key)?;
         let mut mac = Hmac::<Sha256>::new_from_slice(&key_bytes)?;
         mac.update(string_to_sign.as_bytes());
@@ -81,6 +108,7 @@ impl AzureConnector {
         Ok((auth_header, date))
     }
 
+    /// Upload a blob to Azure given a full HTTPS URL.
     pub async fn put_object_from_url(&self, azure_url: &str, data: &[u8]) -> Result<()> {
         let (auth_header, date) = self.create_auth_header("PUT", azure_url, data.len())?;
 
@@ -108,14 +136,7 @@ impl AzureConnector {
 
 #[async_trait]
 impl Connector for AzureConnector {
-    fn scheme(&self) -> &'static str {
-        "https"
-    }
-
-    async fn list(&self, _prefix: &str) -> Result<Vec<String>> {
-        Ok(vec![])
-    }
-
+    /// Fetch a blob from Azure and return it as a `Read` stream.
     async fn fetch(&self, source: &str) -> Result<Box<dyn Read>> {
         let (auth_header, date) = self.create_auth_header("GET", source, 0)?;
 

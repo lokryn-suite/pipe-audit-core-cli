@@ -1,7 +1,7 @@
-use super::Driver;          // Shared trait for all drivers
-use anyhow::Result;         // Application-level error handling
-use polars::prelude::*;     // Polars DataFrame + ParquetReader/Writer
-use std::io::Cursor;        // Wrap &[u8] into a reader
+use super::Driver; // Shared trait for all drivers
+use anyhow::Result; // Application-level error handling
+use polars::prelude::*; // Polars DataFrame + ParquetReader/Writer
+use std::io::Cursor; // Wrap &[u8] into a reader
 
 /// Parquet file driver
 ///
@@ -38,7 +38,8 @@ mod tests {
         let mut df = df! (
             "col_a" => &[1, 2, 3],
             "col_b" => &["one", "two", "three"],
-        ).unwrap();
+        )
+        .unwrap();
 
         // Serialize to Parquet in a buffer
         let mut buffer: Vec<u8> = Vec::new();

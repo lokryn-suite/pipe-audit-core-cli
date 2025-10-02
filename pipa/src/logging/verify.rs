@@ -1,3 +1,10 @@
+//! Ledger sealing + verification
+//!
+//! - Sealing: decrypt ledger, append hashes for unsealed logs, re-encrypt.
+//! - Verification: decrypt ledger, recompute hashes, compare with stored.
+//!
+//! This ensures logs are tamper-evident: once sealed, any modification
+//! or deletion will be detected by verification.
 use chrono::{NaiveDate, Utc};
 use std::path::PathBuf;
 
@@ -30,28 +37,36 @@ pub struct VerificationSummary {
     pub files: Vec<FileVerification>, // per-file results
 }
 
-/// Verify all sealed logs in the ledger
+impl VerificationSummary {
+    fn new() -> Self {
+        VerificationSummary {
+            verified: 0,
+            mismatched: 0,
+            missing: 0,
+            malformed: 0,
+            unsealed: 0,
+            files: Vec::new(),
+        }
+    }
+}
+
+/// Verify all sealed logs in the encrypted ledger
 pub fn verify_all() -> VerificationSummary {
     let logs_dir = PathBuf::from("logs");
-    let mut summary = VerificationSummary {
-        verified: 0,
-        mismatched: 0,
-        missing: 0,
-        malformed: 0,
-        unsealed: 0,
-        files: Vec::new(),
-    };
+    let mut summary = VerificationSummary::new();
 
     if !logs_dir.exists() {
         return summary;
     }
 
+    // 1. Decrypt ledger
     let ledger_plaintext = read_ledger_plaintext();
     if ledger_plaintext.is_empty() {
         return summary;
     }
     let ledger_str = String::from_utf8_lossy(&ledger_plaintext);
 
+    // 2. Parse each ledger entry
     for line in ledger_str.lines() {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 3 {
@@ -64,10 +79,12 @@ pub fn verify_all() -> VerificationSummary {
             });
             continue;
         }
+
         let filename = parts[1].to_string();
         let stored_hash = parts[2].to_string();
         let log_path = logs_dir.join(&filename);
 
+        // 3. Check file existence + recompute hash
         if !log_path.exists() {
             summary.missing += 1;
             summary.files.push(FileVerification {
@@ -102,23 +119,16 @@ pub fn verify_all() -> VerificationSummary {
     summary
 }
 
-/// Verify a single date (YYYY-MM-DD). Defaults to yesterday if None.
+/// Verify logs for a specific date (YYYY-MM-DD). Defaults to yesterday if None.
 pub fn verify_date(date: Option<&str>) -> VerificationSummary {
     let logs_dir = PathBuf::from("logs");
-    let mut summary = VerificationSummary {
-        verified: 0,
-        mismatched: 0,
-        missing: 0,
-        malformed: 0,
-        unsealed: 0,
-        files: Vec::new(),
-    };
+    let mut summary = VerificationSummary::new();
 
     if !logs_dir.exists() {
         return summary;
     }
 
-    // Pick target date: explicit or yesterday
+    // 1. Pick target date
     let target_date = match date {
         Some(d) => match NaiveDate::parse_from_str(d, "%Y-%m-%d") {
             Ok(date) => date.format("%Y-%m-%d").to_string(),
@@ -133,13 +143,14 @@ pub fn verify_date(date: Option<&str>) -> VerificationSummary {
     let log_filename = format!("audit-{}.jsonl", target_date);
     let log_path = logs_dir.join(&log_filename);
 
+    // 2. Decrypt ledger
     let ledger_plaintext = read_ledger_plaintext();
     if ledger_plaintext.is_empty() {
         return summary;
     }
     let ledger_str = String::from_utf8_lossy(&ledger_plaintext);
 
-    // File missing entirely
+    // 3. File missing entirely
     if !log_path.exists() {
         summary.missing += 1;
         summary.files.push(FileVerification {
@@ -151,7 +162,7 @@ pub fn verify_date(date: Option<&str>) -> VerificationSummary {
         return summary;
     }
 
-    // File exists, check if sealed in ledger
+    // 4. File exists, check if sealed in ledger
     if let Some(line) = ledger_str.lines().find(|l| l.contains(&log_filename)) {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 3 {
@@ -164,6 +175,7 @@ pub fn verify_date(date: Option<&str>) -> VerificationSummary {
             });
             return summary;
         }
+
         let stored_hash = parts[2].to_string();
         let computed_hash = compute_sha256(&log_path);
 

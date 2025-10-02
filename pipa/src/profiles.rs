@@ -48,13 +48,11 @@ pub struct Profile {
     pub access_key: Option<String>,
     pub secret_key: Option<String>,
     pub path_style: Option<bool>,
-    pub use_ssl: Option<bool>,
+
+    //pub use_ssl: Option<bool>, TODO: Implement
 
     // --- Azure specific fields ---
     pub account_name: Option<String>,
-    pub client_id: Option<String>,
-    pub client_secret: Option<String>,
-    pub tenant_id: Option<String>,
     pub connection_string: Option<String>,
 
     // --- GCP specific fields ---
@@ -109,8 +107,6 @@ fn expand_env_vars(value: &str) -> String {
             Err(_e) => value.to_string(),
         }
     } else {
-        // Debug-only: value did not match ${VAR} pattern
-        println!("Debug: Value doesn't match pattern, returning as-is");
         value.to_string()
     }
 }

@@ -19,6 +19,7 @@ fn ledger_key_path() -> PathBuf {
 /// Ensure the ledger key exists, creating it securely if missing.
 /// - 32 random bytes (AES‑256 key)
 /// - Stored with 0600 permissions on Unix
+/// - On Windows: stored with default ACLs; tighten with Windows APIs if stricter isolation is required.
 pub fn ensure_ledger_key_exists() {
     let key_path = ledger_key_path();
     if !key_path.exists() {
@@ -39,7 +40,10 @@ pub fn ensure_ledger_key_exists() {
 /// Load the AES key from disk
 fn load_ledger_key() -> Key<Aes256Gcm> {
     let key_bytes = fs::read(ledger_key_path()).expect("missing ledger key");
-    assert!(key_bytes.len() == 32, "ledger key must be 32 bytes for AES-256-GCM");
+    assert!(
+        key_bytes.len() == 32,
+        "ledger key must be 32 bytes for AES-256-GCM"
+    );
     Key::<Aes256Gcm>::from_slice(&key_bytes).clone()
 }
 
@@ -51,7 +55,9 @@ pub fn compute_sha256(path: &PathBuf) -> String {
     let mut buffer = [0u8; 8192];
     loop {
         let n = reader.read(&mut buffer).expect("failed to read file");
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         hasher.update(&buffer[..n]);
     }
     format!("{:x}", hasher.finalize())
@@ -68,8 +74,9 @@ pub fn read_ledger_plaintext() -> Vec<u8> {
     }
     let (nonce_bytes, ciphertext) = data.split_at(12);
     let cipher = Aes256Gcm::new(&load_ledger_key());
-    cipher.decrypt(Nonce::from_slice(nonce_bytes), ciphertext)
-          .expect("ledger decryption failed")
+    cipher
+        .decrypt(Nonce::from_slice(nonce_bytes), ciphertext)
+        .expect("ledger decryption failed")
 }
 
 /// Encrypt and write the full plaintext ledger
@@ -79,8 +86,9 @@ fn write_ledger_plaintext(plaintext: &[u8]) {
     rand::thread_rng().fill_bytes(&mut nonce_bytes);
     let nonce = Nonce::from_slice(&nonce_bytes);
 
-    let ciphertext = cipher.encrypt(nonce, plaintext)
-                           .expect("ledger encryption failed");
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext)
+        .expect("ledger encryption failed");
 
     let mut out = Vec::with_capacity(12 + ciphertext.len());
     out.extend_from_slice(&nonce_bytes);
@@ -112,8 +120,12 @@ pub fn seal_unsealed_logs(logs_dir: &PathBuf, today: &str) {
         if path.is_file() {
             if let Some(fname) = path.file_name().and_then(|s| s.to_str()) {
                 if fname.starts_with("audit-") && fname.ends_with(".jsonl") {
-                    if fname.contains(today) { continue; }
-                    if ledger_contains(fname) { continue; }
+                    if fname.contains(today) {
+                        continue;
+                    }
+                    if ledger_contains(fname) {
+                        continue;
+                    }
                     let hash = compute_sha256(&path);
                     append_to_ledger(fname, &hash);
                 }

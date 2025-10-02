@@ -32,6 +32,7 @@ use crate::validators::{CompoundValidator, FileValidator, Validator};
 use anyhow::Context;
 use chrono::Utc;
 use polars::prelude::*;
+use std::collections::HashSet;
 
 /// Execute validation end-to-end against raw data bytes.
 ///
@@ -178,18 +179,43 @@ pub fn validate_dataframe(
                 ContractType::NotNull => Box::new(NotNullValidator),
                 ContractType::Unique => Box::new(UniqueValidator),
                 ContractType::Boolean => Box::new(BooleanValidator),
-                ContractType::Range { min, max } => Box::new(RangeValidator { min: *min, max: *max }),
-                ContractType::Pattern { pattern } => Box::new(PatternValidator { pattern: pattern.clone() }),
+                ContractType::Range { min, max } => Box::new(RangeValidator {
+                    min: *min,
+                    max: *max,
+                }),
+                ContractType::Pattern { pattern } => Box::new(PatternValidator {
+                    pattern: pattern.clone(),
+                }),
                 ContractType::MaxLength { value } => Box::new(MaxLengthValidator { value: *value }),
-                ContractType::MeanBetween { min, max } => Box::new(MeanBetweenValidator { min: *min, max: *max }),
-                ContractType::StdevBetween { min, max } => Box::new(StdevBetweenValidator { min: *min, max: *max }),
-                ContractType::Completeness { min_ratio } => Box::new(CompletenessValidator { min_ratio: *min_ratio }),
-                ContractType::InSet { values } => Box::new(InSetValidator { values: values.clone() }),
-                ContractType::NotInSet { values } => Box::new(NotInSetValidator { values: values.clone() }),
-                ContractType::Type { dtype } => Box::new(TypeValidator { dtype: dtype.clone() }),
-                ContractType::OutlierSigma { sigma } => Box::new(OutlierSigmaValidator { sigma: *sigma }),
-                ContractType::DateFormat { format } => Box::new(DateFormatValidator { format: format.clone() }),
-                ContractType::Distinctness { min_ratio } => Box::new(DistinctnessValidator { min_ratio: *min_ratio }),
+                ContractType::MeanBetween { min, max } => Box::new(MeanBetweenValidator {
+                    min: *min,
+                    max: *max,
+                }),
+                ContractType::StdevBetween { min, max } => Box::new(StdevBetweenValidator {
+                    min: *min,
+                    max: *max,
+                }),
+                ContractType::Completeness { min_ratio } => Box::new(CompletenessValidator {
+                    min_ratio: *min_ratio,
+                }),
+                ContractType::InSet { values } => Box::new(InSetValidator {
+                    values: values.iter().cloned().collect::<HashSet<String>>(),
+                }),
+                ContractType::NotInSet { values } => Box::new(NotInSetValidator {
+                    values: values.iter().cloned().collect::<HashSet<String>>(),
+                }),
+                ContractType::Type { dtype } => Box::new(TypeValidator {
+                    dtype: dtype.clone(),
+                }),
+                ContractType::OutlierSigma { sigma } => {
+                    Box::new(OutlierSigmaValidator { sigma: *sigma })
+                }
+                ContractType::DateFormat { format } => Box::new(DateFormatValidator {
+                    format: format.clone(),
+                }),
+                ContractType::Distinctness { min_ratio } => Box::new(DistinctnessValidator {
+                    min_ratio: *min_ratio,
+                }),
                 _ => continue, // skip unsupported rules at column level
             };
 
@@ -206,8 +232,9 @@ pub fn validate_dataframe(
     // --- Compound-Level Validation ---
     if let Some(compounds) = &contracts.compound_unique {
         for cu in compounds {
-            let validator: Box<dyn CompoundValidator> =
-                Box::new(CompoundUniqueValidator { columns: cu.columns.clone() });
+            let validator: Box<dyn CompoundValidator> = Box::new(CompoundUniqueValidator {
+                columns: cu.columns.clone(),
+            });
             let report = validator.validate(df)?;
             results.push(RuleResult {
                 column: "compound".to_string(),

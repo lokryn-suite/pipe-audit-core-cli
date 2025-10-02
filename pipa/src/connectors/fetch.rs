@@ -1,4 +1,4 @@
-use crate::connectors::{AzureConnector, Connector, GCSConnector, S3Connector};
+use crate::connectors::{AzureConnector, Connector, GCSConnector, LocalConnector, S3Connector};
 use crate::contracts::schema::Source;
 use crate::logging::error::{ValidationError, ValidationResult};
 use crate::profiles::Profiles;
@@ -15,7 +15,18 @@ pub async fn fetch_data_from_source(
         .ok_or_else(|| ValidationError::Other("Source missing location".to_string()))?;
 
     match source.r#type.as_str() {
-        "local" => std::fs::read(location).map_err(ValidationError::Io),
+        "local" => {
+            let connector = LocalConnector::new();
+            let mut reader = connector
+                .fetch(location)
+                .await
+                .map_err(|e| ValidationError::Connector(e.to_string()))?;
+            let mut buf = Vec::new();
+            reader
+                .read_to_end(&mut buf)
+                .map_err(|e| ValidationError::Connector(e.to_string()))?;
+            Ok(buf)
+        }
         "s3" => {
             let profile_name = source
                 .profile

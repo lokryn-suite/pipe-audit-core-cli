@@ -1,7 +1,7 @@
-use pipa::run::run_contract_validation;
 use glob::glob;
 use hostname;
 use pipa::contract::Executor;
+use pipa::run::run_contract_validation;
 use std::path::Path;
 use whoami;
 

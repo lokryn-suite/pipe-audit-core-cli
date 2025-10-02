@@ -54,3 +54,39 @@ impl Validator for BooleanValidator {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_df(values: &[Option<&str>]) -> DataFrame {
+        let s = Series::new("col".into(), values.to_vec());
+        DataFrame::new(vec![s.into()]).unwrap()
+    }
+    #[test]
+    fn passes_on_valid_booleans() {
+        let df = make_df(&[Some("true"), Some("FALSE"), Some("1"), Some("n"), None]);
+        let validator = BooleanValidator;
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "pass");
+        assert!(report.details.is_none());
+    }
+
+    #[test]
+    fn fails_on_invalid_values() {
+        let df = make_df(&[Some("maybe"), Some("true"), Some("nope")]);
+        let validator = BooleanValidator;
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "fail");
+        assert_eq!(report.details, Some("bad_count=2".to_string()));
+    }
+    #[test]
+    fn skips_on_non_string_column() {
+        let s = Series::new("col".into(), &[1, 0, 1]);
+        let df = DataFrame::new(vec![s.into()]).unwrap();
+        let validator = BooleanValidator;
+        let report = validator.validate(&df, "col").unwrap();
+        assert_eq!(report.status, "skipped");
+        assert!(report.details.unwrap().contains("not a string"));
+    }
+}

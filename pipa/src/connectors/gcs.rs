@@ -1,3 +1,18 @@
+//! Google Cloud Storage (GCS) connector.
+//!
+//! Provides read/write access to GCS buckets using signed JWTs and the
+//! REST API. Implements the generic `Connector` trait so it can be used
+//! interchangeably with other backends (S3, Azure, local).
+//!
+//! ## Responsibilities
+//! - Parse service account JSON from a profile.
+//! - Generate OAuth2 access tokens via JWT bearer flow.
+//! - Upload (`put_object_from_url`) and fetch (`fetch`) objects.
+//! - Convert `gs://bucket/object` style URLs into REST API endpoints.
+//!
+//! ## Profile fields used
+//! - `service_account_json` (must contain `client_email` and `private_key`)
+
 use crate::connectors::Connector;
 use crate::profiles::Profile;
 use anyhow::{Result, anyhow, bail};
@@ -7,6 +22,7 @@ use serde_json::json;
 use std::io::Read;
 use url::Url;
 
+/// Concrete connector for GCS.
 pub struct GCSConnector {
     client_email: String,
     private_key: String,
@@ -14,6 +30,9 @@ pub struct GCSConnector {
 }
 
 impl GCSConnector {
+    /// Build a GCS connector from a profile and URL.
+    ///
+    /// Expects `service_account_json` in the profile.
     pub async fn from_profile_and_url(profile: &Profile, _url: &Url) -> Result<Self> {
         let service_account_json = profile
             .service_account_json
@@ -29,6 +48,7 @@ impl GCSConnector {
         })
     }
 
+    /// Parse service account JSON string into `(client_email, private_key)`.
     fn parse_service_account(service_account_json: &str) -> Result<(String, String)> {
         use serde_json::Value;
 
@@ -47,6 +67,10 @@ impl GCSConnector {
         Ok((client_email, private_key))
     }
 
+    /// Generate an OAuth2 access token using JWT bearer flow.
+    ///
+    /// - Signs a JWT with the service account private key.
+    /// - Exchanges it for an access token at Google’s token endpoint.
     async fn generate_access_token(&self) -> Result<String> {
         let now = chrono::Utc::now().timestamp();
         let claims = json!({
@@ -84,6 +108,7 @@ impl GCSConnector {
         Ok(access_token)
     }
 
+    /// Convert a `gs://bucket/object` style URL into a REST API endpoint.
     fn convert_to_rest_api_url(&self, source_url: &str) -> Result<String> {
         let url = Url::parse(source_url)?;
         let path = url.path().trim_start_matches('/');
@@ -102,11 +127,12 @@ impl GCSConnector {
         ))
     }
 
+    /// Upload an object to GCS given a `gs://bucket/object` URL.
     pub async fn put_object_from_url(&self, gcs_url: &str, data: &[u8]) -> Result<()> {
         let access_token = self.generate_access_token().await?;
         let api_url = self
             .convert_to_rest_api_url(gcs_url)?
-            .replace("?alt=media", "");
+            .replace("?alt=media", ""); // remove download flag for upload
 
         let response = self
             .client
@@ -129,14 +155,7 @@ impl GCSConnector {
 
 #[async_trait]
 impl Connector for GCSConnector {
-    fn scheme(&self) -> &'static str {
-        "https"
-    }
-
-    async fn list(&self, _prefix: &str) -> Result<Vec<String>> {
-        Ok(vec![])
-    }
-
+    /// Fetch an object from GCS and return it as a `Read` stream.
     async fn fetch(&self, source: &str) -> Result<Box<dyn Read>> {
         let access_token = self.generate_access_token().await?;
         let api_url = self.convert_to_rest_api_url(source)?;

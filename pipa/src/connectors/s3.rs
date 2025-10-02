@@ -1,3 +1,24 @@
+//! Amazon S3 connector.
+//!
+//! Provides read/write access to S3 buckets using the AWS SDK for Rust.
+//! Implements the generic `Connector` trait so it can be used
+//! interchangeably with other backends (Azure, GCS, local).
+//!
+//! ## Responsibilities
+//! - Construct an `S3Client` from a `Profile` and S3 URL.
+//! - Support both virtual-hosted and path-style addressing.
+//! - Upload (`put_object_from_url`) and fetch (`fetch`) objects.
+//! - List objects under a given prefix.
+//!
+//! ## Expected URL format
+//! - `s3://bucket/key`
+//!
+//! ## Profile fields used
+//! - `region` (default: `us-east-1`)
+//! - `endpoint` (optional, for custom endpoints / MinIO)
+//! - `access_key` / `secret_key` (optional, overrides default credentials)
+//! - `path_style` (optional, forces path-style addressing)
+
 use super::Connector;
 use crate::profiles::Profile;
 use anyhow::{Context, Result, anyhow};
@@ -6,12 +27,18 @@ use aws_sdk_s3::Client as S3Client;
 use aws_sdk_s3::config::Credentials;
 use std::io::{Cursor, Read};
 
+/// Concrete connector for S3.
 pub struct S3Connector {
     client: S3Client,
     bucket: String,
 }
 
 impl S3Connector {
+    /// Build an `S3Connector` from a profile and URL.
+    ///
+    /// - Extracts bucket name from the URL.
+    /// - Loads AWS config (region, endpoint, credentials).
+    /// - Applies path-style if requested.
     pub async fn from_profile_and_url(profile: &Profile, url: &url::Url) -> Result<Self> {
         // Expect s3://bucket/key style URLs
         let bucket = url
@@ -35,7 +62,7 @@ impl S3Connector {
         let base_config = config_loader.load().await;
         let mut s3_config = aws_sdk_s3::config::Builder::from(&base_config);
 
-        // Build S3 config with optional path-style
+        // Override credentials if explicitly provided in profile
         if let (Some(access_key), Some(secret_key)) = (&profile.access_key, &profile.secret_key) {
             if !access_key.is_empty() && !secret_key.is_empty() {
                 let creds = Credentials::new(
@@ -49,6 +76,7 @@ impl S3Connector {
             }
         }
 
+        // Force path-style if requested
         if profile.path_style.unwrap_or(false) {
             s3_config = s3_config.force_path_style(true);
         }
@@ -58,6 +86,7 @@ impl S3Connector {
         Ok(S3Connector { client, bucket })
     }
 
+    /// Upload an object to S3 given a full `s3://bucket/key` URL.
     pub async fn put_object_from_url(&self, s3_url: &str, data: &[u8]) -> Result<()> {
         let url = url::Url::parse(s3_url)?;
         let bucket = url
@@ -79,6 +108,7 @@ impl S3Connector {
         Ok(())
     }
 
+    /// Normalize an S3 path into a key (strip `s3://bucket/` if present).
     fn parse_s3_path(&self, path: &str) -> Result<String> {
         if path.starts_with("s3://") {
             let url = url::Url::parse(path)?;
@@ -91,31 +121,7 @@ impl S3Connector {
 
 #[async_trait::async_trait]
 impl Connector for S3Connector {
-    fn scheme(&self) -> &'static str {
-        "s3"
-    }
-
-    async fn list(&self, prefix: &str) -> Result<Vec<String>> {
-        let prefix_key = self.parse_s3_path(prefix)?;
-
-        let resp = self
-            .client
-            .list_objects_v2()
-            .bucket(&self.bucket)
-            .prefix(&prefix_key)
-            .send()
-            .await
-            .context("Failed to list S3 objects")?;
-
-        Ok(resp
-            .contents
-            .unwrap_or_default()
-            .into_iter()
-            .filter_map(|obj| obj.key)
-            .map(|key| format!("s3://{}/{}", self.bucket, key))
-            .collect())
-    }
-
+    /// Fetch an object from S3 and return it as a `Read` stream.
     async fn fetch(&self, location: &str) -> Result<Box<dyn Read>> {
         let key = self.parse_s3_path(location)?;
         let resp = self

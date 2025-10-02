@@ -18,8 +18,6 @@ mod engine;
 mod logging;
 mod movement;
 mod profiles;
-mod runner;
-mod traits;
 mod validators;
 
 // -----------------------------
@@ -37,8 +35,8 @@ mod validators;
 /// Also re-exports the `Executor` type from logging for contract execution context.
 pub mod contract {
     pub use crate::engine::contracts::{
-        ContractInfo, ContractList, ContractValidation, ValidationOutcome,
-        get_contract, list_contracts, run_contract_validation, validate_contract
+        ContractInfo, ContractList, ContractValidation, ValidationOutcome, get_contract,
+        list_contracts, run_contract_validation, validate_contract,
     };
     pub use crate::logging::schema::Executor;
 }
@@ -68,7 +66,6 @@ pub mod run {
 pub mod logs {
     pub use crate::engine::logs::{LogVerification, verify_logs};
     pub use crate::logging::verify::FileStatus;
-    pub use crate::logging::init_logging;
 }
 
 /// System health checks.
