@@ -22,6 +22,7 @@ glob = "0.3.3"
 
 [dev-dependencies]
 pretty_assertions = "1.4"
+assert_cmd = "2"
 
 [[bin]]
 name = "pipa"

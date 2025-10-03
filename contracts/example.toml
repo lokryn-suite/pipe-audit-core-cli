@@ -1,0 +1,93 @@
+# Example Pipe Audit contract
+# Demonstrates file-level rules, column validations, compound uniqueness,
+# and source/destination/quarantine configuration.
+
+[contract]
+name = "example_dataset"
+version = "0.1.0"
+tags = ["demo", "pii", "critical"]
+
+# -------------------------------
+# File-level validation
+# -------------------------------
+[file]
+validation = [
+  # Require a minimum and maximum row count
+  { rule = "row_count", min = 100, max = 10_000 }
+]
+
+# -------------------------------
+# Column-level validations
+# -------------------------------
+
+[[columns]]
+name = "record_id"
+validation = [
+  { rule = "not_null" },
+  { rule = "unique" },
+  { rule = "range", min = 1, max = 9999 }
+]
+
+[[columns]]
+name = "person_id"
+validation = [
+  { rule = "not_null" },
+  { rule = "unique" },
+  # Example UUID pattern
+  { rule = "pattern", pattern = "^[0-9a-fA-F-]{36}$" }
+]
+
+[[columns]]
+name = "age"
+validation = [
+  { rule = "range", min = 0, max = 120 },
+  { rule = "outlier_sigma", sigma = 3.0 }
+]
+
+[[columns]]
+name = "faction"
+validation = [
+  { rule = "not_null" },
+  { rule = "in_set", values = ["FactionA", "FactionB", "FactionC", "Factionless"] }
+]
+
+[[columns]]
+name = "era_tag"
+validation = [
+  { rule = "pattern", pattern = "^[A-Z][a-z]+$" }
+]
+
+[[columns]]
+name = "nickname"
+validation = [
+  { rule = "max_length", value = 50 }
+]
+
+[[columns]]
+name = "industry"
+validation = [
+  { rule = "not_null" }
+]
+
+# -------------------------------
+# Compound uniqueness
+# -------------------------------
+[[compound_unique]]
+columns = ["household_id", "person_id"]
+
+# -------------------------------
+# Sources, destinations, quarantine
+# -------------------------------
+
+[source]
+type = "s3"
+location = "s3://<YOUR_BUCKET>/example.csv"
+profile = "s3_example"
+
+[destination]
+type = "local"
+location = "data/"
+
+[quarantine]
+type = "local"
+location = "quarantine/"

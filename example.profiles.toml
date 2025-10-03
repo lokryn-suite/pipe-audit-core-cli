@@ -1,0 +1,29 @@
+# Example profiles.toml
+# Demonstrates how to configure multiple storage providers (S3/MinIO, Azure, GCS).
+# Replace the placeholder values or environment variables with your own.
+
+# ---------------------------------
+# MinIO / S3-compatible storage
+# ---------------------------------
+[minio_raw]
+provider   = "s3"
+endpoint   = "http://localhost:9000"        # Example local MinIO endpoint
+region     = "us-east-1"
+access_key = "${S3_ACCESS_KEY}"          # Use env vars for secrets
+secret_key = "${S3_SECRET_KEY}"
+path_style = true                           # Required for MinIO
+use_ssl    = false
+
+# ---------------------------------
+# Azure Blob Storage
+# ---------------------------------
+[azure_example]
+provider            = "azure"
+connection_string   = "${AZURE_STORAGE_CONNECTION_STRING}"
+
+# ---------------------------------
+# Google Cloud Storage
+# ---------------------------------
+[gcs_example]
+provider              = "gcs"
+service_account_json  = "${GCP_SERVICE_ACCOUNT_KEY}"

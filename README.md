@@ -1,5 +1,4 @@
 
-
 # Pipe Audit
 
 **Universal data validation and compliance audit engine for structured data pipelines.**
@@ -28,13 +27,8 @@ cargo install pipe-audit
 
 This provides the `pipa` binary:
 
-Examples: 
-
 ```bash
 pipa init
-```
-
-```bash
 pipa run --all
 ```
 
@@ -53,7 +47,7 @@ pipe-audit-core = "0.1"
 Validate a contract:
 
 ```bash
-pipa contract validate contracts/people.toml
+pipa contract validate contracts/example.toml
 ```
 
 Check system health:
@@ -74,7 +68,7 @@ Verify logs:
 pipa logs verify ./examples/logs/test.log
 ```
 
-👉 More commands and advanced usage will be documented in the upcoming docs.
+👉 For full guides, examples, and contributor onboarding, see the [📚 Documentation](https://docs.lokryn.com).
 
 ---
 
@@ -84,7 +78,7 @@ pipa logs verify ./examples/logs/test.log
 use pipe_audit_core::engine::run_contract_validation;
 
 fn main() {
-    run_contract_validation("contracts/people.toml").unwrap();
+    run_contract_validation("contracts/example.toml").unwrap();
 }
 ```
 
@@ -99,17 +93,10 @@ See the [`LICENSES/`](./LICENSES) directory for full texts.
 
 ---
 
-## 📚 Documentation
+## 📚 Documentation & Community
 
-- Full documentation is in progress and will be published soon.  
-- Expect end‑to‑end examples, contributor onboarding guides, and API references.  
-
----
-
-## 🌍 Project Status
-
-- The repository is currently private while we finalize structure and licensing.  
-- It will be made **public soon**, with contributor guidelines and full docs.  
+- Full docs: [https://docs.lokryn.com](https://docs.lokryn.com)  
+- Join the discussion on [Discord](https://discord.gg/4JJT9qEfCA)
 
 ---
 
@@ -117,4 +104,5 @@ See the [`LICENSES/`](./LICENSES) directory for full texts.
 - Richer docs with end‑to‑end examples  
 - Expanded connectors (databases, streaming sources)  
 - Containerized API service built on `pipe-audit-core`  
+```
 
