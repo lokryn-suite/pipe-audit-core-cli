@@ -33,7 +33,7 @@ jobs:
         working-directory: ./pipa-core
         run: cargo publish
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CREATES_IO_TOKEN }}
 
       - name: Publish My CLI Crate
         working-directory: ./pipa 
@@ -41,4 +41,4 @@ jobs:
          sleep 30
          cargo publish
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CREATES_IO_TOKEN }}
