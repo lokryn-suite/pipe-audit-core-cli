@@ -28,3 +28,4 @@ assert_cmd = "2"
 [[bin]]
 name = "pipa"
 path = "src/main.rs"
+

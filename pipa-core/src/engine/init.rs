@@ -8,6 +8,9 @@ pub fn init_project() -> Result<String, Box<dyn std::error::Error>> {
     init_logging();
     ensure_ledger_key_exists();
     fs::create_dir_all("contracts")?;
+    if !Path::new(".env").exists() {
+        fs::write(".env","#.env")?;
+    }
 
     // Write example profile.toml if it doesn't exist
     let profile_content = r#"# Pipe Audit profile.toml example

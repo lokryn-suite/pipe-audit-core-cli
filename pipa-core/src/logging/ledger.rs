@@ -11,10 +11,15 @@ use std::path::PathBuf;
 const LEDGER_PATH: &str = "logs/hash_ledger.enc";
 
 /// Location of the AES key (~/.lokryn/pipeaudit/ledger.key)
-fn ledger_key_path() -> PathBuf {
-    let home = env::var("HOME").expect("HOME not set");
-    PathBuf::from(home).join(".lokryn/pipeaudit/ledger.key")
+
+fn local_config_dir() -> PathBuf {
+    PathBuf::from("config")
 }
+
+fn ledger_key_path() -> PathBuf {
+    local_config_dir().join("ledger.key")
+}
+
 
 /// Ensure the ledger key exists, creating it securely if missing.
 /// - 32 random bytes (AES‑256 key)
