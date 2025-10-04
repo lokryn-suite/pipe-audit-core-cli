@@ -8,6 +8,14 @@ repository = "https://github.com/lokryn-suite/pipe-audit-core-cli"
 readme = "../README.md"
 license = "GPL-3.0-or-later"
 keywords = ["cli", "audit", "compliance", "data-quality"]
+homepage = "https://github.com/lokryn-suite/pipe-audit-core-cli"
+
+
+[package.metadata.wix]
+upgrade-guid = "08AB9107-9460-4731-AC07-FD147578294E"
+path-guid = "F2F3C370-2896-4112-8B23-34CA19100563"
+license = false
+eula = false
 
 [dependencies]
 # Pull in the core engine from the sibling crate

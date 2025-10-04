@@ -22,3 +22,8 @@ thiserror = "1.0"
 shared-version = true
 tag-name = "v{{version}}"
 publish = false
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
