@@ -1,6 +1,6 @@
 [package]
 name = "pipe-audit"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 authors = ["Daniel Wallace"]
 description = "Command-line interface for the pipa audit engine"
