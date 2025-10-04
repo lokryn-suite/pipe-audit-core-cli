@@ -3,7 +3,6 @@ use aes_gcm::{Aes256Gcm, Key, Nonce};
 use chrono::Utc;
 use rand::RngCore;
 use sha2::{Digest, Sha256};
-use std::env;
 use std::fs::{self, File};
 use std::io::{BufReader, Read};
 use std::path::PathBuf;
