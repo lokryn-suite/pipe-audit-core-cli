@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "pipe-audit-core,
-    "pipe-audit"
+    "pipa-core",
+    "pipa"
 ]
 
 resolver ="3"
