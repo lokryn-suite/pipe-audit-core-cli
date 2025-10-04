@@ -4,27 +4,35 @@ use std::fs;
 use std::path::Path;
 
 pub fn init_project() -> Result<String, Box<dyn std::error::Error>> {
-    // Initialize logging system once at project init
+
     init_logging();
     ensure_ledger_key_exists();
-    fs::create_dir_all("contracts")?;
+
+    let mut actions = Vec::new();
+
+    let contracts_dir = Path::new("contracts");
+    fs::create_dir_all(contracts_dir)?;
+
     if !Path::new(".env").exists() {
-        fs::write(".env","#.env")?;
+        fs::write(".env", "# .env file for project-specific environment variables")?;
+        actions.push("Created .env file");
     }
 
-    // Write example profile.toml if it doesn't exist
-    let profile_content = r#"# Pipe Audit profiles.toml example
+    if !Path::new("profiles.toml").exists() {
+        let profile_content = r#"# Pipe Audit profiles.toml example
 # provider can be: "local", "s3", "azure", "gcs"
 name = "example-profile"
 provider = "local"
-# For s3/azure/gcs, add provider-specific fields (endpoint, region, connection_string, service_account_json, etc.)
+# For s3/azure/gcs, add provider-specific fields (endpoint, region, connection_string, etc.)
 "#;
-    if !Path::new("profiles.toml").exists() {
         fs::write("profiles.toml", profile_content)?;
+        actions.push("Created profiles.toml");
     }
 
-    // Write example contract if it doesn't exist
-    let contract_content = r#"# contracts/example.toml
+    // Use `join` to build paths robustly for any OS.
+    let contract_path = contracts_dir.join("example.toml");
+    if !contract_path.exists() {
+        let contract_content = r#"# contracts/example.toml
 [contract]
 name = "example-contract"
 version = "0.1.0"
@@ -44,10 +52,13 @@ type = { dtype = "i64" }
 [[columns.validation]]
 unique = true
 "#;
-    let contract_path = Path::new("contracts/example.toml");
-    if !contract_path.exists() {
-        fs::write(contract_path, contract_content)?;
+        fs::write(&contract_path, contract_content)?;
+        actions.push("Created contracts/example.toml");
     }
 
-    Ok("Initialized logs/, contracts/, profile.toml, and example contract".into())
+    if actions.is_empty() {
+        Ok("Project already initialized. No changes were made.".to_string())
+    } else {
+        Ok(format!("Successfully initialized project. {}", actions.join(". ")))
+    }
 }
