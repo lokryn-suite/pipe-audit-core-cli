@@ -13,14 +13,14 @@ pub fn init_project() -> Result<String, Box<dyn std::error::Error>> {
     }
 
     // Write example profile.toml if it doesn't exist
-    let profile_content = r#"# Pipe Audit profile.toml example
+    let profile_content = r#"# Pipe Audit profiles.toml example
 # provider can be: "local", "s3", "azure", "gcs"
 name = "example-profile"
 provider = "local"
 # For s3/azure/gcs, add provider-specific fields (endpoint, region, connection_string, service_account_json, etc.)
 "#;
-    if !Path::new("profile.toml").exists() {
-        fs::write("profile.toml", profile_content)?;
+    if !Path::new("profiles.toml").exists() {
+        fs::write("profiles.toml", profile_content)?;
     }
 
     // Write example contract if it doesn't exist
