@@ -12,6 +12,8 @@ const LEDGER_PATH: &str = "logs/hash_ledger.enc";
 
 /// Location of the AES key (~/.lokryn/pipeaudit/ledger.key)
 
+
+
 fn local_config_dir() -> PathBuf {
     PathBuf::from("config")
 }
