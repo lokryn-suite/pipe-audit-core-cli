@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Daniel Wallace"]
 description = "Command-line interface for the pipa audit engine"
 repository = "https://github.com/lokryn-suite/pipe-audit-core-cli"
+readme = "../README.md"
 license = "GPL-3.0-or-later"
 keywords = ["cli", "audit", "compliance", "data-quality"]
 
