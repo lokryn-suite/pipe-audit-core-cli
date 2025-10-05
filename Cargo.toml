@@ -21,7 +21,7 @@ thiserror = "1.0"
 [workspace.metadata.release]
 shared-version = true
 tag-name = "v{{version}}"
-publish = ["cargo-publish"]
+publish = true
 
 # The profile that 'dist' will build with
 [profile.dist]
