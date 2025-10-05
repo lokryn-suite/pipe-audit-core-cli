@@ -56,7 +56,12 @@ mod tests {
         let validator = UniqueValidator;
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "fail");
-        assert!(report.details.unwrap().contains("found 2 unique values in 3 total rows"));
+        assert!(
+            report
+                .details
+                .unwrap()
+                .contains("found 2 unique values in 3 total rows")
+        );
     }
 
     #[test]
@@ -65,7 +70,12 @@ mod tests {
         let validator = UniqueValidator;
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "fail");
-        assert!(report.details.unwrap().contains("found 1 unique values in 3 total rows"));
+        assert!(
+            report
+                .details
+                .unwrap()
+                .contains("found 1 unique values in 3 total rows")
+        );
     }
 
     #[test]
@@ -91,6 +101,11 @@ mod tests {
         let validator = UniqueValidator;
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "fail");
-        assert!(report.details.unwrap().contains("found 2 unique values in 3 total rows"));
+        assert!(
+            report
+                .details
+                .unwrap()
+                .contains("found 2 unique values in 3 total rows")
+        );
     }
 }

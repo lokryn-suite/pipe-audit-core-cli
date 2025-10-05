@@ -118,4 +118,3 @@ mod tests {
         assert!(report.details.unwrap().contains("not a string"));
     }
 }
-

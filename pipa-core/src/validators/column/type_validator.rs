@@ -53,7 +53,9 @@ mod tests {
     #[test]
     fn passes_when_dtype_matches() {
         let df = make_i64_df(&[1, 2, 3]);
-        let validator = TypeValidator { dtype: "Int64".to_string() };
+        let validator = TypeValidator {
+            dtype: "Int64".to_string(),
+        };
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "pass");
     }
@@ -61,7 +63,9 @@ mod tests {
     #[test]
     fn fails_when_dtype_does_not_match() {
         let df = make_i64_df(&[1, 2, 3]);
-        let validator = TypeValidator { dtype: "Float64".to_string() };
+        let validator = TypeValidator {
+            dtype: "Float64".to_string(),
+        };
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "fail");
         assert!(report.details.unwrap().contains("expected=Float64"));
@@ -70,7 +74,9 @@ mod tests {
     #[test]
     fn works_with_float_column() {
         let df = make_f64_df(&[1.0, 2.0, 3.0]);
-        let validator = TypeValidator { dtype: "Float64".to_string() };
+        let validator = TypeValidator {
+            dtype: "Float64".to_string(),
+        };
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "pass");
     }
@@ -78,7 +84,9 @@ mod tests {
     #[test]
     fn works_with_string_column() {
         let df = make_str_df(&["a", "b", "c"]);
-        let validator = TypeValidator { dtype: "String".to_string() };
+        let validator = TypeValidator {
+            dtype: "String".to_string(),
+        };
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "pass");
     }
@@ -87,7 +95,9 @@ mod tests {
     fn fails_on_empty_column_with_wrong_dtype() {
         let s: Series = Series::new("col".into(), Vec::<i64>::new());
         let df = DataFrame::new(vec![s.into()]).unwrap();
-        let validator = TypeValidator { dtype: "Float64".to_string() };
+        let validator = TypeValidator {
+            dtype: "Float64".to_string(),
+        };
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "fail");
     }

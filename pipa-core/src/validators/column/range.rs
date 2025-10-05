@@ -112,4 +112,3 @@ mod tests {
         assert!(report.details.unwrap().contains("not an integer"));
     }
 }
-

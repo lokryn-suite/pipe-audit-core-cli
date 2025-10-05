@@ -42,6 +42,8 @@ whoami = "1.6.1"
 anyhow = "1.0.100"
 thiserror = "1.0"
 once_cell = "1.19"
+csv = "1.3"
+fake = { version = "4.4", features = ["derive"] }
 
 # Encryption
 sha2 = "0.10.9"

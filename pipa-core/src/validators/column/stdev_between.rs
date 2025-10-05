@@ -90,7 +90,10 @@ mod tests {
     fn fails_when_stdev_above_max() {
         // values: [1, 100] → stdev large
         let df = make_f64_df(&[Some(1.0), Some(100.0)]);
-        let validator = StdevBetweenValidator { min: 0.0, max: 10.0 };
+        let validator = StdevBetweenValidator {
+            min: 0.0,
+            max: 10.0,
+        };
         let report = validator.validate(&df, "col").unwrap();
         assert_eq!(report.status, "fail");
         assert!(report.details.unwrap().contains("observed_stdev"));
@@ -124,4 +127,3 @@ mod tests {
         assert!(report.details.unwrap().contains("could not be calculated"));
     }
 }
-
