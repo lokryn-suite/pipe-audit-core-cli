@@ -9,19 +9,19 @@ resolver ="3"
 # Optional: if you want to share settings across crates
 [workspace.package]
 edition = "2024"
-license = "MIT OR Apache-2.0"
+license = "GPL-3.0 or MPL-2.0"
 authors = ["Daniel Wallace"]
 
 [workspace.dependencies]
-# You can centralize common deps here if you want
 serde = { version = "1.0", features = ["derive"] }
 anyhow = "1.0"
 thiserror = "1.0"
 
-[workspace.metadata.release]
+[workspace.metadata.dist]
+publish-jobs = ["cargo-publish"]
+# These settings are also useful for cargo-dist
 shared-version = true
 tag-name = "v{{version}}"
-publish = false
 
 # The profile that 'dist' will build with
 [profile.dist]
