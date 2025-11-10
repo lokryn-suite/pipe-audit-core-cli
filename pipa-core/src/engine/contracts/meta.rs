@@ -2,6 +2,7 @@
 
 use crate::contracts::load_contract_for_file; // loads and parses TOML into SchemaContracts
 use crate::engine::log_action; // audit logging hook
+use crate::logging::AuditLogger;
 use glob; // filesystem globbing
 use std::path::Path;
 
@@ -25,7 +26,7 @@ pub struct ContractValidation {
 
 /// List all available contracts by scanning `contracts/*.toml`.
 /// Returns both the list and a log message.
-pub fn list_contracts() -> Result<(ContractList, String), String> {
+pub fn list_contracts<L: AuditLogger>(logger: &L) -> Result<(ContractList, String), String> {
     let contracts: Vec<String> = match glob::glob("contracts/*.toml") {
         Ok(paths) => paths
             .filter_map(Result::ok)
@@ -38,17 +39,18 @@ pub fn list_contracts() -> Result<(ContractList, String), String> {
         Err(_) => return Err("Failed to read contracts directory".to_string()),
     };
 
-    let message = log_action("contracts_listed", None, None, None, None);
+    let message = log_action(logger, "contracts_listed", None, None, None, None);
     Ok((ContractList { contracts }, message))
 }
 
 /// Get information about a specific contract.
 /// Returns metadata (name, version, exists) and a log message.
-pub fn get_contract(name: &str) -> (ContractInfo, String) {
+pub fn get_contract<L: AuditLogger>(logger: &L, name: &str) -> (ContractInfo, String) {
     let contract_path = format!("contracts/{}.toml", name);
 
     if !Path::new(&contract_path).exists() {
         let message = log_action(
+            logger,
             "contract_retrieved",
             Some("exists=false"),
             Some(name),
@@ -67,6 +69,7 @@ pub fn get_contract(name: &str) -> (ContractInfo, String) {
 
     let contract = load_contract_for_file(Path::new(&contract_path));
     let message = log_action(
+        logger,
         "contract_retrieved",
         Some("exists=true"),
         Some(&contract.contract.name),
@@ -86,11 +89,12 @@ pub fn get_contract(name: &str) -> (ContractInfo, String) {
 /// Validate a contract's syntax and structure.
 /// Attempts to parse the TOML file into a SchemaContracts.
 /// Returns validation result and a log message.
-pub fn validate_contract(name: &str) -> (ContractValidation, String) {
+pub fn validate_contract<L: AuditLogger>(logger: &L, name: &str) -> (ContractValidation, String) {
     let contract_path = format!("contracts/{}.toml", name);
 
     if !Path::new(&contract_path).exists() {
         let message = log_action(
+            logger,
             "contract_validated",
             Some("error=Contract not found"),
             Some(name),
@@ -109,6 +113,7 @@ pub fn validate_contract(name: &str) -> (ContractValidation, String) {
     match std::panic::catch_unwind(|| load_contract_for_file(Path::new(&contract_path))) {
         Ok(contract) => {
             let message = log_action(
+                logger,
                 "contract_validated",
                 Some("valid=true"),
                 Some(&contract.contract.name),
@@ -125,6 +130,7 @@ pub fn validate_contract(name: &str) -> (ContractValidation, String) {
         }
         Err(_) => {
             let message = log_action(
+                logger,
                 "contract_validated",
                 Some("error=Contract failed to parse"),
                 Some(name),

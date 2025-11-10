@@ -8,7 +8,7 @@ use crate::engine::log_action; // audit logging
 use crate::engine::validation::execute_validation; // run validators against data
 use crate::logging::error::{ValidationError, ValidationResult};
 use crate::logging::schema::{Executor, RuleResult};
-use crate::logging::{AuditLogEntry, writer::log_and_print};
+use crate::logging::{AuditLogEntry, AuditLogger};
 use crate::movement::FileMovement; // handles writing success/quarantine data
 use crate::profiles::{Profiles, load_profiles}; // profile management
 use chrono::Utc;
@@ -28,7 +28,14 @@ pub struct ValidationOutcome {
 /// - Execute validations
 /// - Move data to destination or quarantine (only if profiles are valid)
 /// - Log all actions
-pub async fn run_contract_validation(
+///
+/// # Arguments
+/// * `logger` - The audit logger implementation to use
+/// * `contract_name` - Name of the contract to validate
+/// * `executor` - Executor context (user/host info)
+/// * `log_to_console` - Whether to print messages to console
+pub async fn run_contract_validation<L: AuditLogger>(
+    logger: &L,
     contract_name: &str,
     executor: &Executor,
     log_to_console: bool,
@@ -58,6 +65,7 @@ pub async fn run_contract_validation(
 
     // --- Start log ---
     let start_message = log_action(
+        logger,
         "contract_validation_started",
         None,
         Some(contract_name),
@@ -71,6 +79,7 @@ pub async fn run_contract_validation(
     // --- Fetch data ---
     let data = fetch_data_from_source(source, &profiles).await?;
     let _ = log_action(
+        logger,
         "file_read",
         Some(&format!("bytes={}", data.len())),
         None,
@@ -116,7 +125,7 @@ pub async fn run_contract_validation(
         if let Some(dest) = &contracts.destination {
             if dest.r#type != "not_moved" {
                 if !dest_valid {
-                    log_and_print(
+                    logger.log_and_print(
                         &AuditLogEntry {
                             timestamp: Utc::now().to_rfc3339(),
                             level: "AUDIT",
@@ -137,7 +146,7 @@ pub async fn run_contract_validation(
                     match FileMovement::write_success_data(&df, original_location, dest, &profiles)
                         .await
                     {
-                        Ok(_) => log_and_print(
+                        Ok(_) => logger.log_and_print(
                             &AuditLogEntry {
                                 timestamp: Utc::now().to_rfc3339(),
                                 level: "AUDIT",
@@ -154,7 +163,7 @@ pub async fn run_contract_validation(
                             },
                             "✅ Data written to destination",
                         ),
-                        Err(e) => log_and_print(
+                        Err(e) => logger.log_and_print(
                             &AuditLogEntry {
                                 timestamp: Utc::now().to_rfc3339(),
                                 level: "AUDIT",
@@ -179,7 +188,7 @@ pub async fn run_contract_validation(
         if let Some(quarantine) = &contracts.quarantine {
             if quarantine.r#type != "not_moved" {
                 if !quarantine_valid {
-                    log_and_print(
+                    logger.log_and_print(
                         &AuditLogEntry {
                             timestamp: Utc::now().to_rfc3339(),
                             level: "AUDIT",
@@ -205,7 +214,7 @@ pub async fn run_contract_validation(
                     )
                     .await
                     {
-                        Ok(_) => log_and_print(
+                        Ok(_) => logger.log_and_print(
                             &AuditLogEntry {
                                 timestamp: Utc::now().to_rfc3339(),
                                 level: "AUDIT",
@@ -222,7 +231,7 @@ pub async fn run_contract_validation(
                             },
                             "⚠️ Data quarantined",
                         ),
-                        Err(e) => log_and_print(
+                        Err(e) => logger.log_and_print(
                             &AuditLogEntry {
                                 timestamp: Utc::now().to_rfc3339(),
                                 level: "AUDIT",
@@ -248,6 +257,7 @@ pub async fn run_contract_validation(
     // --- Completion log ---
     let details = format!("pass={}, fail={}", pass_count, fail_count);
     let message = log_action(
+        logger,
         "contract_validation_completed",
         Some(&details),
         Some(&contracts.contract.name),

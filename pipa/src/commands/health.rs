@@ -1,4 +1,5 @@
 use pipa::health::run_health_check;
+use pipa::logging::JsonlLogger;
 
 /// Run a system health check.
 ///
@@ -12,6 +13,7 @@ use pipa::health::run_health_check;
 /// ```
 pub async fn run() {
     // Run the health check; ignore the status object here, just print the message
-    let (_status, message) = run_health_check(true);
+    let logger = JsonlLogger::default();
+    let (_status, message) = run_health_check(&logger, true);
     println!("{}", message);
 }

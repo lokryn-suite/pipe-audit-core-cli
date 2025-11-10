@@ -1,6 +1,7 @@
 //! Profile management functions for the engine
 
 use crate::engine::log_action;
+use crate::logging::AuditLogger;
 use crate::profiles::{Profile, Profiles, load_profiles};
 
 /// Result of listing profiles
@@ -16,11 +17,11 @@ pub struct ProfileTestResult {
 }
 
 /// List all available profiles
-pub fn list_profiles() -> Result<(ProfileList, String), String> {
+pub fn list_profiles<L: AuditLogger>(logger: &L) -> Result<(ProfileList, String), String> {
     match load_profiles() {
         Ok(profiles) => {
             let profile_names: Vec<String> = profiles.keys().cloned().collect();
-            let message = log_action("profiles_listed", None, None, None, None);
+            let message = log_action(logger, "profiles_listed", None, None, None, None);
             Ok((
                 ProfileList {
                     profiles: profile_names,
@@ -33,11 +34,12 @@ pub fn list_profiles() -> Result<(ProfileList, String), String> {
 }
 
 /// Test a profile's connectivity
-pub async fn test_profile(profile_name: &str) -> (ProfileTestResult, String) {
+pub async fn test_profile<L: AuditLogger>(logger: &L, profile_name: &str) -> (ProfileTestResult, String) {
     let profiles = match load_profiles() {
         Ok(p) => p,
         Err(_) => {
             let message = log_action(
+                logger,
                 "profile_tested",
                 Some("exists=false, testable=false, connected=false"),
                 None,
@@ -59,6 +61,7 @@ pub async fn test_profile(profile_name: &str) -> (ProfileTestResult, String) {
         let connected = test_profile_internal(profile_name, &profiles).await;
         let details = format!("exists=true, testable=true, connected={}", connected);
         let message = log_action(
+            logger,
             "profile_tested",
             Some(&details),
             None,
@@ -75,6 +78,7 @@ pub async fn test_profile(profile_name: &str) -> (ProfileTestResult, String) {
         )
     } else {
         let message = log_action(
+            logger,
             "profile_tested",
             Some("exists=false, testable=false, connected=false"),
             None,

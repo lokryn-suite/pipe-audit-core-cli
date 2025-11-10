@@ -1,9 +1,10 @@
+use pipa::logging::JsonlLogger;
 use pipa::logs::{verify_logs, FileStatus};
 
 /// Verify log integrity for a given date or for all logs.
 ///
 /// Delegates to `pipa::logs::verify_logs(date)`, which performs
-/// the actual verification of log files. Prints the engine’s
+/// the actual verification of log files. Prints the engine's
 /// summary message, then iterates over each file and displays
 /// its verification status with a symbol and label.
 ///
@@ -14,7 +15,8 @@ use pipa::logs::{verify_logs, FileStatus};
 /// ```
 pub async fn verify(date: Option<&str>, _all: bool) {
     // Run verification via engine API
-    let (verification, message) = verify_logs(date);
+    let logger = JsonlLogger::default();
+    let (verification, message) = verify_logs(&logger, date);
 
     // Print engine-provided summary message
     println!("{}", message);

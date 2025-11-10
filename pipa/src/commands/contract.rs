@@ -1,4 +1,5 @@
 use pipa::contract::{get_contract, list_contracts, validate_contract};
+use pipa::logging::JsonlLogger;
 use std::fs;
 
 /// List all available contracts in the project.
@@ -12,7 +13,8 @@ use std::fs;
 /// pipa contract list
 /// ```
 pub async fn list() {
-    match list_contracts() {
+    let logger = JsonlLogger::default();
+    match list_contracts(&logger) {
         Ok((contract_list, message)) => {
             // Print engine-provided summary message
             println!("{}", message);
@@ -31,7 +33,7 @@ pub async fn list() {
 /// Validate a contract file for TOML syntax and schema correctness.
 ///
 /// Delegates to `pipa::contract::validate_contract(file)`, which
-/// parses and validates the contract definition. Prints the engine’s
+/// parses and validates the contract definition. Prints the engine's
 /// validation message to stdout.
 ///
 /// Called from `main.rs` when the user runs:
@@ -39,7 +41,8 @@ pub async fn list() {
 /// pipa contract validate <file>
 /// ```
 pub async fn validate(file: &str) {
-    let (_validation, message) = validate_contract(file);
+    let logger = JsonlLogger::default();
+    let (_validation, message) = validate_contract(&logger, file);
     println!("{}", message);
 }
 
@@ -54,7 +57,8 @@ pub async fn validate(file: &str) {
 /// pipa contract show <name>
 /// ```
 pub async fn show(name: &str) {
-    let (contract_info, message) = get_contract(name);
+    let logger = JsonlLogger::default();
+    let (contract_info, message) = get_contract(&logger, name);
     println!("{}", message);
 
     if contract_info.exists {

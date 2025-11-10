@@ -1,6 +1,7 @@
 //! Log verification functions for the engine
 
 use crate::engine::log_action;
+use crate::logging::AuditLogger;
 use crate::logging::verify::{FileVerification, verify_all, verify_date};
 
 /// Result of log verification
@@ -15,7 +16,7 @@ pub struct LogVerification {
 }
 
 /// Verify logs for a specific date or all logs
-pub fn verify_logs(date: Option<&str>) -> (LogVerification, String) {
+pub fn verify_logs<L: AuditLogger>(logger: &L, date: Option<&str>) -> (LogVerification, String) {
     let summary = if let Some(date) = date {
         verify_date(Some(date))
     } else {
@@ -37,7 +38,7 @@ pub fn verify_logs(date: Option<&str>) -> (LogVerification, String) {
         summary.unsealed
     );
 
-    let message = log_action("logs_verified", Some(&details), None, None, None);
+    let message = log_action(logger, "logs_verified", Some(&details), None, None, None);
 
     (
         LogVerification {

@@ -1,6 +1,7 @@
 use glob::glob;
 use hostname;
 use pipa::contract::Executor;
+use pipa::logging::JsonlLogger;
 use pipa::run::run_contract_validation;
 use std::path::Path;
 use whoami;
@@ -18,6 +19,9 @@ use whoami;
 /// pipa run --all
 /// ```
 pub async fn run_all() {
+    // Create logger
+    let logger = JsonlLogger::default();
+
     // Capture host and user for Executor metadata
     let hostname = hostname::get()
         .unwrap_or_default()
@@ -40,7 +44,7 @@ pub async fn run_all() {
                     .unwrap_or("unknown");
 
                 // Run validation via engine API
-                match run_contract_validation(contract_name, &executor, true).await {
+                match run_contract_validation(&logger, contract_name, &executor, true).await {
                     Ok((outcome, message)) => {
                         println!("{}", message);
                         if !outcome.passed {
@@ -76,6 +80,9 @@ pub async fn run_all() {
 /// pipa run <contract_name>
 /// ```
 pub async fn run_single(contract_name: &str) {
+    // Create logger
+    let logger = JsonlLogger::default();
+
     // Capture host and user for Executor metadata
     let hostname = hostname::get()
         .unwrap_or_default()
@@ -97,7 +104,7 @@ pub async fn run_single(contract_name: &str) {
     }
 
     // Run validation via engine API
-    match run_contract_validation(contract_name, &executor, true).await {
+    match run_contract_validation(&logger, contract_name, &executor, true).await {
         Ok((outcome, message)) => {
             println!("{}", message);
             if !outcome.passed {

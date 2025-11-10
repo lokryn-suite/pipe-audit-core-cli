@@ -6,6 +6,16 @@ pub(crate) mod schema;
 pub(crate) mod verify;
 pub(crate) mod writer;
 
+// New: pluggable logging infrastructure
+pub(crate) mod logger_trait;
+pub(crate) mod jsonl_logger;
+pub(crate) mod noop_logger;
+
 // Re-export the types and functions you want public
 pub(crate) use schema::AuditLogEntry;
-pub(crate) use writer::log_event; // whatever types you define
+pub(crate) use writer::log_event; // Deprecated, will be removed in favor of trait
+
+// Public exports for the new logging trait system
+pub use logger_trait::AuditLogger;
+pub use jsonl_logger::JsonlLogger;
+pub use noop_logger::NoOpLogger;

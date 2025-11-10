@@ -1,6 +1,5 @@
-use crate::logging::log_event;
+use crate::logging::AuditLogger;
 use crate::logging::schema::{AuditLogEntry, Executor};
-use crate::logging::writer::log_and_print;
 use crate::profiles::load_profiles;
 use chrono::Utc;
 use hostname;
@@ -28,7 +27,7 @@ pub fn check_system_health() -> HealthStatus {
     }
 }
 
-pub fn run_health_check(log_to_console: bool) -> (HealthStatus, String) {
+pub fn run_health_check<L: AuditLogger>(logger: &L, log_to_console: bool) -> (HealthStatus, String) {
     let hostname = hostname::get()
         .unwrap_or_default()
         .to_string_lossy()
@@ -42,9 +41,9 @@ pub fn run_health_check(log_to_console: bool) -> (HealthStatus, String) {
 
     let log_fn = |entry: &AuditLogEntry, msg: &str| {
         if log_to_console {
-            log_and_print(entry, msg);
+            logger.log_and_print(entry, msg);
         } else {
-            log_event(entry);
+            logger.log_event(entry);
         }
     };
 
@@ -102,7 +101,7 @@ pub fn run_health_check(log_to_console: bool) -> (HealthStatus, String) {
     } else {
         "system unhealthy"
     };
-    let message = crate::engine::log_action("health_check", Some(summary_msg), None, None, None);
+    let message = crate::engine::log_action(logger, "health_check", Some(summary_msg), None, None, None);
     if log_to_console {
         println!("{}", message);
     }

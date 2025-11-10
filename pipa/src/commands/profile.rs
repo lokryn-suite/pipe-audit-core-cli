@@ -1,3 +1,4 @@
+use pipa::logging::JsonlLogger;
 use pipa::profile::{list_profiles, test_profile};
 
 /// List all available profiles in the project.
@@ -11,7 +12,8 @@ use pipa::profile::{list_profiles, test_profile};
 /// pipa profile list
 /// ```
 pub async fn list() {
-    match list_profiles() {
+    let logger = JsonlLogger::default();
+    match list_profiles(&logger) {
         Ok((profile_list, message)) => {
             // Print engine-provided summary message
             println!("{}", message);
@@ -34,8 +36,8 @@ pub async fn list() {
 /// Test connectivity for a specific profile by name.
 ///
 /// Delegates to `pipa::profile::test_profile(profile_name)`, which
-/// attempts to connect using the profile’s configuration (e.g. DB,
-/// cloud service, or API credentials). Prints the engine’s result
+/// attempts to connect using the profile's configuration (e.g. DB,
+/// cloud service, or API credentials). Prints the engine's result
 /// message to stdout.
 ///
 /// Called from `main.rs` when the user runs:
@@ -43,6 +45,7 @@ pub async fn list() {
 /// pipa profile test <profile_name>
 /// ```
 pub async fn test(profile_name: &str) {
-    let (_result, message) = test_profile(profile_name).await;
+    let logger = JsonlLogger::default();
+    let (_result, message) = test_profile(&logger, profile_name).await;
     println!("{}", message);
 }

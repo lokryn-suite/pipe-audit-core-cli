@@ -1,14 +1,25 @@
 //! Centralized logging functionality for engine operations
 
 use crate::logging::schema::{AuditLogEntry, Executor};
-use crate::logging::writer::log_event;
+use crate::logging::AuditLogger;
 use chrono::Utc;
 use hostname;
 use whoami;
 
-/// Centralized logging function for all engine operations
-/// Logs full details to crypto-signed audit log and returns PII-safe console message
-pub fn log_action(
+/// Centralized logging function for all engine operations.
+///
+/// Creates an AuditLogEntry and logs it via the provided logger.
+/// Returns a PII-safe console message based on the event type.
+///
+/// # Arguments
+/// * `logger` - The audit logger implementation to use
+/// * `event` - Event type (e.g., "contract_validation_started")
+/// * `details` - Optional detail string
+/// * `contract` - Optional contract name
+/// * `version` - Optional contract version
+/// * `target` - Optional target identifier (file, profile, etc.)
+pub fn log_action<L: AuditLogger>(
+    logger: &L,
     event: &str,
     details: Option<&str>,
     contract: Option<&str>,
@@ -44,7 +55,7 @@ pub fn log_action(
         summary: None,
     };
 
-    log_event(&entry);
+    logger.log_event(&entry);
 
     // Return PII-safe message based on event type
     match event {

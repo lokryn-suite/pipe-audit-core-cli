@@ -83,3 +83,12 @@ pub mod health {
 pub mod init {
     pub use crate::engine::init::init_project;
 }
+
+/// Logging infrastructure: pluggable audit logging.
+///
+/// Provides the `AuditLogger` trait and implementations for different backends.
+/// Consumers can use the built-in JSONL logger or implement their own.
+pub mod logging {
+    pub use crate::logging::{AuditLogger, JsonlLogger, NoOpLogger};
+    pub use crate::logging::schema::{AuditLogEntry, Contract, Target, RuleResult, Executor, ProcessSummary};
+}
