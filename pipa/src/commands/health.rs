@@ -1,5 +1,5 @@
 use pipa::health::run_health_check;
-use pipa::logging::JsonlLogger;
+use pipa::audit_logging::JsonlLogger;
 
 /// Run a system health check.
 ///

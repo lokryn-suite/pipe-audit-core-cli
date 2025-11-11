@@ -1,7 +1,7 @@
 use glob::glob;
 use hostname;
 use pipa::contract::Executor;
-use pipa::logging::JsonlLogger;
+use pipa::audit_logging::JsonlLogger;
 use pipa::run::run_contract_validation;
 use std::path::Path;
 use whoami;

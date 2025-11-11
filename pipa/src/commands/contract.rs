@@ -1,5 +1,5 @@
 use pipa::contract::{get_contract, list_contracts, validate_contract};
-use pipa::logging::JsonlLogger;
+use pipa::audit_logging::JsonlLogger;
 use std::fs;
 
 /// List all available contracts in the project.

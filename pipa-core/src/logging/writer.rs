@@ -56,6 +56,7 @@ pub fn log_event(entry: &AuditLogEntry) {
 ///
 /// - `entry`: the structured audit log entry (full detail, sealed later)
 /// - `console_msg`: a curated, PII‑safe one‑liner for operator visibility
+#[allow(dead_code)]
 pub fn log_and_print(entry: &AuditLogEntry, console_msg: &str) {
     // Write full detail to audit log + seal unsealed logs
     log_event(entry);

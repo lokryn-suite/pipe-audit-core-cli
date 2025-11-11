@@ -1,4 +1,4 @@
-use pipa::logging::JsonlLogger;
+use pipa::audit_logging::JsonlLogger;
 use pipa::profile::{list_profiles, test_profile};
 
 /// List all available profiles in the project.

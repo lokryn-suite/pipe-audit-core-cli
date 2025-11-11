@@ -1,4 +1,4 @@
-use pipa::logging::JsonlLogger;
+use pipa::audit_logging::JsonlLogger;
 use pipa::logs::{verify_logs, FileStatus};
 
 /// Verify log integrity for a given date or for all logs.
