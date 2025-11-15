@@ -16,3 +16,20 @@ pub fn init_project() {
         Err(e) => eprintln!("❌ {}", e),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_init_project_calls_lib_function() {
+        // This test verifies that init_project function exists and can be called
+        // The actual implementation is tested in the pipa-core library
+        // We're just testing the CLI wrapper logic here
+
+        // Since lib_init_project() has side effects (creates directories),
+        // we can't easily test it without mocking. Instead, we test that
+        // the function signature is correct and the code compiles.
+        let _ = lib_init_project;
+    }
+}

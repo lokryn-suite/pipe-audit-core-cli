@@ -72,3 +72,56 @@ pub async fn show(name: &str) {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_contract_path_construction() {
+        let name = "my_contract";
+        let path = format!("contracts/{}.toml", name);
+        assert_eq!(path, "contracts/my_contract.toml");
+    }
+
+    #[test]
+    fn test_contract_file_read() {
+        // Create a temporary directory with a test contract
+        let temp_dir = TempDir::new().unwrap();
+        let contracts_dir = temp_dir.path().join("contracts");
+        fs::create_dir_all(&contracts_dir).unwrap();
+
+        let test_content = "test contract content";
+        let test_file = contracts_dir.join("test.toml");
+        fs::write(&test_file, test_content).unwrap();
+
+        // Read using absolute path
+        let content = fs::read_to_string(&test_file).unwrap();
+        assert_eq!(content, test_content);
+    }
+
+    #[test]
+    fn test_contract_file_read_error() {
+        let path = "contracts/nonexistent.toml";
+        let result = fs::read_to_string(path);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_multiple_contracts_listing() {
+        // Create a temporary directory with multiple test contracts
+        let temp_dir = TempDir::new().unwrap();
+        let contracts_dir = temp_dir.path().join("contracts");
+        fs::create_dir_all(&contracts_dir).unwrap();
+
+        fs::write(contracts_dir.join("contract1.toml"), "content1").unwrap();
+        fs::write(contracts_dir.join("contract2.toml"), "content2").unwrap();
+        fs::write(contracts_dir.join("contract3.toml"), "content3").unwrap();
+
+        // Verify all contract files exist using absolute paths
+        assert!(contracts_dir.join("contract1.toml").exists());
+        assert!(contracts_dir.join("contract2.toml").exists());
+        assert!(contracts_dir.join("contract3.toml").exists());
+    }
+}

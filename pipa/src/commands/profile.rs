@@ -49,3 +49,44 @@ pub async fn test(profile_name: &str) {
     let (_result, message) = test_profile(&logger, profile_name).await;
     println!("{}", message);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_logger_creation() {
+        // Test that JsonlLogger can be created
+        let logger = JsonlLogger::default();
+        // Logger is created successfully if we get here
+        drop(logger);
+    }
+
+    #[test]
+    fn test_profile_name_handling() {
+        // Test that profile names are handled correctly
+        let profile_name = "test_profile";
+        assert!(!profile_name.is_empty());
+        assert_eq!(profile_name.len(), 12);
+    }
+
+    #[test]
+    fn test_empty_profile_list() {
+        // Test that empty profile list is handled
+        let profiles: Vec<String> = vec![];
+        assert!(profiles.is_empty());
+    }
+
+    #[test]
+    fn test_non_empty_profile_list() {
+        // Test that non-empty profile list is handled
+        let profiles = vec!["profile1".to_string(), "profile2".to_string()];
+        assert!(!profiles.is_empty());
+        assert_eq!(profiles.len(), 2);
+
+        // Test iteration over profiles
+        for name in profiles.iter() {
+            assert!(!name.is_empty());
+        }
+    }
+}

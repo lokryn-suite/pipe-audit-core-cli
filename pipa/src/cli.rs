@@ -132,3 +132,185 @@ pub enum LogsCommands {
         all: bool,
     },
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_run_with_contract_name() {
+        let args = Cli::parse_from(&["pipa", "run", "my_contract"]);
+
+        match args.command {
+            Some(Commands::Run { contract, all }) => {
+                assert_eq!(contract, Some("my_contract".to_string()));
+                assert!(!all);
+            }
+            _ => panic!("Expected Run command"),
+        }
+    }
+
+    #[test]
+    fn test_run_with_all_flag() {
+        let args = Cli::parse_from(&["pipa", "run", "--all"]);
+
+        match args.command {
+            Some(Commands::Run { contract, all }) => {
+                assert_eq!(contract, None);
+                assert!(all);
+            }
+            _ => panic!("Expected Run command"),
+        }
+    }
+
+    #[test]
+    fn test_contract_validate() {
+        let args = Cli::parse_from(&["pipa", "contract", "validate", "test.toml"]);
+
+        match args.command {
+            Some(Commands::Contract { contract_command }) => {
+                match contract_command {
+                    ContractCommands::Validate { file } => {
+                        assert_eq!(file, "test.toml");
+                    }
+                    _ => panic!("Expected Validate command"),
+                }
+            }
+            _ => panic!("Expected Contract command"),
+        }
+    }
+
+    #[test]
+    fn test_contract_list() {
+        let args = Cli::parse_from(&["pipa", "contract", "list"]);
+
+        match args.command {
+            Some(Commands::Contract { contract_command }) => {
+                assert!(matches!(contract_command, ContractCommands::List));
+            }
+            _ => panic!("Expected Contract command"),
+        }
+    }
+
+    #[test]
+    fn test_contract_show() {
+        let args = Cli::parse_from(&["pipa", "contract", "show", "my_contract"]);
+
+        match args.command {
+            Some(Commands::Contract { contract_command }) => {
+                match contract_command {
+                    ContractCommands::Show { name } => {
+                        assert_eq!(name, "my_contract");
+                    }
+                    _ => panic!("Expected Show command"),
+                }
+            }
+            _ => panic!("Expected Contract command"),
+        }
+    }
+
+    #[test]
+    fn test_profile_list() {
+        let args = Cli::parse_from(&["pipa", "profile", "list"]);
+
+        match args.command {
+            Some(Commands::Profile { profile_command }) => {
+                assert!(matches!(profile_command, ProfileCommands::List));
+            }
+            _ => panic!("Expected Profile command"),
+        }
+    }
+
+    #[test]
+    fn test_profile_test() {
+        let args = Cli::parse_from(&["pipa", "profile", "test", "my_profile"]);
+
+        match args.command {
+            Some(Commands::Profile { profile_command }) => {
+                match profile_command {
+                    ProfileCommands::Test { profile } => {
+                        assert_eq!(profile, "my_profile");
+                    }
+                    _ => panic!("Expected Test command"),
+                }
+            }
+            _ => panic!("Expected Profile command"),
+        }
+    }
+
+    #[test]
+    fn test_health_command() {
+        let args = Cli::parse_from(&["pipa", "health"]);
+
+        match args.command {
+            Some(Commands::Health) => {
+                // Success - health command parsed correctly
+            }
+            _ => panic!("Expected Health command"),
+        }
+    }
+
+    #[test]
+    fn test_logs_verify_with_date() {
+        let args = Cli::parse_from(&["pipa", "logs", "verify", "--date", "2025-01-15"]);
+
+        match args.command {
+            Some(Commands::Logs { logs_command }) => {
+                match logs_command {
+                    LogsCommands::Verify { date, all } => {
+                        assert_eq!(date, Some("2025-01-15".to_string()));
+                        assert!(!all);
+                    }
+                }
+            }
+            _ => panic!("Expected Logs command"),
+        }
+    }
+
+    #[test]
+    fn test_logs_verify_all() {
+        let args = Cli::parse_from(&["pipa", "logs", "verify", "--all"]);
+
+        match args.command {
+            Some(Commands::Logs { logs_command }) => {
+                match logs_command {
+                    LogsCommands::Verify { date, all } => {
+                        assert_eq!(date, None);
+                        assert!(all);
+                    }
+                }
+            }
+            _ => panic!("Expected Logs command"),
+        }
+    }
+
+    #[test]
+    fn test_init_command() {
+        let args = Cli::parse_from(&["pipa", "init"]);
+
+        match args.command {
+            Some(Commands::Init) => {
+                // Success - init command parsed correctly
+            }
+            _ => panic!("Expected Init command"),
+        }
+    }
+
+    #[test]
+    fn test_verbose_flag() {
+        let args = Cli::parse_from(&["pipa", "--verbose", "health"]);
+        assert!(args.verbose);
+    }
+
+    #[test]
+    fn test_verbose_flag_short() {
+        let args = Cli::parse_from(&["pipa", "-v", "health"]);
+        assert!(args.verbose);
+    }
+
+    #[test]
+    fn test_no_command() {
+        let args = Cli::parse_from(&["pipa"]);
+        assert!(args.command.is_none());
+    }
+}
